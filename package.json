@@ -1,0 +1,19 @@
+{
+  "name": "leptos-nebula",
+  "version": "0.1.0",
+  "private": true,
+  "description": "leptos-nebula — lado JS: UnoCSS, preset exportado e geração do CSS pré-gerado (style/dist/ui.css)",
+  "type": "module",
+  "exports": {
+    "./preset": "./uno/preset.ts"
+  },
+  "scripts": {
+    "css": "node scripts/build-css.mjs",
+    "css-check": "node scripts/check-shortcuts.mjs",
+    "css-fresh": "node scripts/build-css.mjs --check"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.138",
+    "unocss": "^66.10.5"
+  }
+}

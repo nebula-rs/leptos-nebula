@@ -1,0 +1,200 @@
+/*
+ * Camada 2 e 3 — tema "scandi": minimalista escandinavo.
+ * Muito respiro, cantos suaves, bordas finas, quase sem sombra, um acento frio (fiorde).
+ * `:root` faz deste o tema padrão.
+ *
+ * Contrato de tokens (outros temas — `material`, `glass` — redefinem os mesmos nomes):
+ * papéis de cor com pares `on-*`, níveis de superfície, estados, elevação/efeitos,
+ * escala de raios, tipografia e movimento. Ver docs/ui/overview.md#temas.
+ *
+ * O bloco escuro fica entre os marcadores `dark:start`/`dark:end`: o build (scripts/build-css.mjs)
+ * o repete dentro de `@media (prefers-color-scheme: dark)` para quando `data-mode` estiver ausente.
+ */
+:root,
+[data-theme="scandi"] {
+  color-scheme: light;
+
+  /* Superfícies e texto */
+  --lx-color-bg: var(--lx-p-linen-50);
+  --lx-color-surface: var(--lx-p-linen-0);
+  --lx-color-surface-muted: var(--lx-p-linen-100);
+  --lx-color-surface-raised: var(--lx-p-linen-0);
+  --lx-color-on-surface: var(--lx-p-ink-900);
+  --lx-color-on-surface-muted: var(--lx-p-ink-500);
+  --lx-color-border: var(--lx-p-linen-200);
+  --lx-color-border-strong: var(--lx-p-linen-300);
+  --lx-color-focus: var(--lx-p-fjord-300);
+  --lx-color-scrim: rgb(28 31 35 / 0.35);
+
+  /* Papéis de cor (nomes do Quasar): cor, conteúdo sobre ela e versão suave */
+  --lx-color-primary: var(--lx-p-fjord-600);
+  --lx-color-on-primary: var(--lx-p-linen-0);
+  --lx-color-primary-soft: var(--lx-p-fjord-50);
+  --lx-color-secondary: var(--lx-p-ink-600);
+  --lx-color-on-secondary: var(--lx-p-linen-0);
+  --lx-color-secondary-soft: var(--lx-p-linen-100);
+  --lx-color-positive: var(--lx-p-moss-600);
+  --lx-color-on-positive: var(--lx-p-linen-0);
+  --lx-color-positive-soft: var(--lx-p-moss-50);
+  --lx-color-negative: var(--lx-p-clay-600);
+  --lx-color-on-negative: var(--lx-p-linen-0);
+  --lx-color-negative-soft: var(--lx-p-clay-50);
+  --lx-color-info: var(--lx-p-fjord-500);
+  --lx-color-on-info: var(--lx-p-linen-0);
+  --lx-color-info-soft: var(--lx-p-fjord-50);
+  --lx-color-warning: var(--lx-p-amber-600);
+  --lx-color-on-warning: var(--lx-p-linen-0);
+  --lx-color-warning-soft: var(--lx-p-amber-50);
+  --lx-color-neutral: var(--lx-p-ink-800);
+  --lx-color-on-neutral: var(--lx-p-linen-0);
+  --lx-color-neutral-soft: var(--lx-p-linen-100);
+
+  /* Estados (hover/pressionado/desabilitado) — filtro aplicado ao controle */
+  --lx-state-hover-filter: brightness(0.92);
+  --lx-state-active-filter: brightness(0.85);
+  --lx-state-disabled-opacity: 0.5;
+
+  /* Tipografia */
+  --lx-font-sans: var(--lx-p-font-humanist);
+  --lx-font-mono: var(--lx-p-font-mono);
+  --lx-font-size-xs: 0.75rem;
+  --lx-font-size-sm: 0.875rem;
+  --lx-font-size-md: 0.9375rem;
+  --lx-font-size-lg: 1.125rem;
+  --lx-font-size-xl: 1.75rem;
+  --lx-font-weight-normal: 400;
+  --lx-font-weight-strong: 500;
+  --lx-font-weight-heading: 400;
+  --lx-letter-spacing-heading: -0.015em;
+  --lx-line-height: 1.5;
+
+  /* Espaçamento (densidade) */
+  --lx-space-xs: 0.25rem;
+  --lx-space-sm: 0.5rem;
+  --lx-space-md: 0.875rem;
+  --lx-space-lg: 1.5rem;
+  --lx-space-xl: 2.5rem;
+  --lx-space-2xl: 4rem;
+
+  /* Forma */
+  --lx-radius-sm: 4px;
+  --lx-radius-md: 8px;
+  --lx-radius-lg: 14px;
+  --lx-radius-pill: 999px;
+  --lx-border-width: 1px;
+  --lx-shadow-sm: 0 1px 2px rgb(28 31 35 / 0.04);
+  --lx-shadow-md: 0 6px 24px rgb(28 31 35 / 0.06);
+
+  /* Dimensões */
+  --lx-control-height: 2.25rem;
+  --lx-control-height-sm: 1.75rem;
+  --lx-header-height: 3.75rem;
+  --lx-content-max-width: 72rem;
+
+  /* Movimento */
+  --lx-duration-fast: 150ms;
+  --lx-duration-medium: 250ms;
+  --lx-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Efeitos de superfície (valor neutro no scandi; usados pelo tema glass) */
+  --lx-surface-backdrop: none;
+  --lx-surface-highlight: none;
+
+  /* Camada 3 — tokens de componente */
+  --lx-btn-radius: var(--lx-radius-md);
+  --lx-btn-weight: var(--lx-font-weight-strong);
+  --lx-btn-transform: none;
+  --lx-btn-tracking: 0;
+  --lx-btn-shadow: none;
+  --lx-badge-radius: var(--lx-radius-pill);
+  --lx-banner-radius: var(--lx-radius-md);
+  --lx-card-radius: var(--lx-radius-lg);
+  --lx-card-shadow: none;
+  --lx-card-border: var(--lx-border-width) solid var(--lx-color-border);
+  --lx-card-bg: var(--lx-color-surface);
+  --lx-card-backdrop: var(--lx-surface-backdrop);
+  --lx-card-highlight: var(--lx-surface-highlight);
+  --lx-header-bg: var(--lx-color-bg);
+  --lx-header-color: var(--lx-color-on-surface);
+  --lx-header-border: var(--lx-color-border);
+  --lx-header-shadow: var(--lx-shadow-md);
+  --lx-header-backdrop: var(--lx-surface-backdrop);
+  --lx-drawer-bg: var(--lx-color-bg);
+  --lx-drawer-shadow: 0 24px 64px rgb(28 31 35 / 0.18);
+  --lx-item-radius: var(--lx-radius-md);
+  /* Recuo horizontal de item e de rótulo de grupo (mesmo valor, para o texto alinhar) */
+  --lx-item-padding-x: var(--lx-space-md);
+  --lx-item-hover-bg: var(--lx-color-surface-muted);
+  --lx-item-active-bg: var(--lx-color-surface-muted);
+  --lx-item-active-color: var(--lx-color-on-surface);
+  --lx-tab-indicator: var(--lx-color-primary);
+  --lx-table-header-bg: var(--lx-color-surface);
+  --lx-table-header-color: var(--lx-color-on-surface-muted);
+  --lx-table-header-weight: var(--lx-font-weight-strong);
+  --lx-table-header-transform: none;
+  --lx-table-row-hover: var(--lx-color-surface-muted);
+  --lx-code-bg: var(--lx-p-linen-100);
+  --lx-code-text: var(--lx-p-ink-800);
+  --lx-code-comment: var(--lx-p-ink-500);
+  --lx-code-keyword: var(--lx-p-clay-600);
+  --lx-code-string: var(--lx-p-moss-600);
+  --lx-code-number: var(--lx-p-amber-600);
+  --lx-code-function: var(--lx-p-fjord-500);
+  --lx-code-type: var(--lx-p-fjord-700);
+  --lx-code-punct: var(--lx-p-ink-500);
+}
+
+[data-theme="scandi"][data-mode="dark"] {
+  /* dark:start */
+  color-scheme: dark;
+
+  --lx-color-bg: var(--lx-p-ink-950);
+  --lx-color-surface: var(--lx-p-ink-900);
+  --lx-color-surface-muted: var(--lx-p-ink-850);
+  --lx-color-surface-raised: var(--lx-p-ink-850);
+  --lx-color-on-surface: #ebe7e1;
+  --lx-color-on-surface-muted: var(--lx-p-ink-400);
+  --lx-color-border: var(--lx-p-ink-800);
+  --lx-color-border-strong: var(--lx-p-ink-600);
+  --lx-color-focus: var(--lx-p-fjord-400);
+  --lx-color-scrim: rgb(0 0 0 / 0.6);
+
+  --lx-color-primary: var(--lx-p-fjord-300);
+  --lx-color-on-primary: var(--lx-p-ink-950);
+  --lx-color-primary-soft: rgb(143 176 198 / 0.12);
+  --lx-color-secondary: var(--lx-p-ink-300);
+  --lx-color-on-secondary: var(--lx-p-ink-950);
+  --lx-color-secondary-soft: rgb(168 173 179 / 0.12);
+  --lx-color-positive: var(--lx-p-moss-300);
+  --lx-color-on-positive: var(--lx-p-ink-950);
+  --lx-color-positive-soft: rgb(156 193 160 / 0.12);
+  --lx-color-negative: var(--lx-p-clay-300);
+  --lx-color-on-negative: var(--lx-p-ink-950);
+  --lx-color-negative-soft: rgb(224 149 140 / 0.12);
+  --lx-color-info: var(--lx-p-fjord-300);
+  --lx-color-on-info: var(--lx-p-ink-950);
+  --lx-color-info-soft: rgb(143 176 198 / 0.12);
+  --lx-color-warning: var(--lx-p-amber-300);
+  --lx-color-on-warning: var(--lx-p-ink-950);
+  --lx-color-warning-soft: rgb(226 184 102 / 0.12);
+  --lx-color-neutral: #ebe7e1;
+  --lx-color-on-neutral: var(--lx-p-ink-950);
+  --lx-color-neutral-soft: rgb(235 231 225 / 0.08);
+
+  --lx-state-hover-filter: brightness(1.12);
+  --lx-state-active-filter: brightness(1.22);
+
+  --lx-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --lx-shadow-md: 0 6px 24px rgb(0 0 0 / 0.35);
+  --lx-drawer-shadow: 0 24px 64px rgb(0 0 0 / 0.5);
+  --lx-code-bg: var(--lx-p-ink-950);
+  --lx-code-text: #ebe7e1;
+  --lx-code-comment: var(--lx-p-ink-400);
+  --lx-code-keyword: var(--lx-p-clay-300);
+  --lx-code-string: var(--lx-p-moss-300);
+  --lx-code-number: var(--lx-p-amber-300);
+  --lx-code-function: var(--lx-p-fjord-300);
+  --lx-code-type: var(--lx-p-amber-300);
+  --lx-code-punct: var(--lx-p-ink-300);
+  /* dark:end */
+}

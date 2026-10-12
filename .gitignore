@@ -1,0 +1,9 @@
+node_modules/
+target/
+dist/
+.env
+.env.*
+!.env.example
+
+# Exceção: o CSS pré-gerado é versionado (ADR-0005)
+!style/dist/

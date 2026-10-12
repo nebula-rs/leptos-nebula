@@ -1,0 +1,39 @@
+/*
+ * Camada 1 — tokens primitivos: valores crus (paletas, fontes).
+ * Nunca usados pelos componentes; só pelos temas (camada 2).
+ */
+:root {
+  /* Escandinavo — linho, tinta, fiorde, musgo, âmbar, argila */
+  --lx-p-linen-0: #ffffff;
+  --lx-p-linen-50: #faf8f5;
+  --lx-p-linen-100: #f3f0eb;
+  --lx-p-linen-200: #e8e3dc;
+  --lx-p-linen-300: #d6cfc5;
+  --lx-p-ink-300: #a8adb3;
+  --lx-p-ink-400: #8a8f96;
+  --lx-p-ink-500: #6b7078;
+  --lx-p-ink-600: #4d525a;
+  --lx-p-ink-800: #2a2e33;
+  --lx-p-ink-850: #22262a;
+  --lx-p-ink-900: #1c1f23;
+  --lx-p-ink-950: #131518;
+  --lx-p-fjord-50: #eef3f6;
+  --lx-p-fjord-300: #8fb0c6;
+  --lx-p-fjord-400: #6c90a8;
+  --lx-p-fjord-500: #4a6a82;
+  --lx-p-fjord-600: #3d5a70;
+  --lx-p-fjord-700: #314a5c;
+  --lx-p-moss-50: #eef4ee;
+  --lx-p-moss-300: #9cc1a0;
+  --lx-p-moss-600: #4f7a55;
+  --lx-p-amber-50: #fbf4e6;
+  --lx-p-amber-300: #e2b866;
+  --lx-p-amber-600: #a87420;
+  --lx-p-clay-50: #faeeec;
+  --lx-p-clay-300: #e0958c;
+  --lx-p-clay-600: #b0473c;
+
+  /* Tipografia */
+  --lx-p-font-humanist: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --lx-p-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}

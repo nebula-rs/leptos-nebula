@@ -1,0 +1,63 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+language: 'rust'
+layer: 'library'
+
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'Cargo.toml'
+    - '/Cargo.toml'
+  css:
+    - 'src/**/*.rs'
+    - 'uno/**/*'
+    - 'uno.config.ts'
+    - 'scripts/**/*'
+    - 'style/tokens/**/*'
+    - 'style/base.css'
+
+tasks:
+  # Gera o CSS pré-gerado versionado (ADR-0005)
+  css:
+    command: 'pnpm run css'
+    inputs: ['@group(css)']
+    outputs: ['style/dist/ui.css']
+
+  # Todo shortcut precisa gerar CSS (nome com prefixo de variante some em silêncio)
+  css-check:
+    command: 'pnpm run css-check'
+    inputs: ['@group(css)']
+
+  # Falha se o ui.css versionado não é o que o build gera agora
+  css-fresh:
+    command: 'pnpm run css-fresh'
+    inputs: ['@group(css)', 'style/dist/ui.css']
+
+  check:
+    command: 'cargo check -p leptos-nebula --all-targets'
+    inputs: ['@group(sources)']
+
+  check-wasm:
+    command: 'cargo check -p leptos-nebula --target wasm32-unknown-unknown'
+    inputs: ['@group(sources)']
+
+  # Componentes precisam renderizar no servidor (SSG do leptos-press) — ADR-0007
+  check-ssr:
+    command: 'cargo check -p leptos-nebula --features ssr'
+    inputs: ['@group(sources)']
+
+  lint:
+    command: 'cargo clippy -p leptos-nebula --all-targets -- -D warnings'
+    inputs: ['@group(sources)']
+
+  lint-wasm:
+    command: 'cargo clippy -p leptos-nebula --target wasm32-unknown-unknown -- -D warnings'
+    inputs: ['@group(sources)']
+
+  fmt:
+    command: 'cargo fmt -p leptos-nebula --check'
+    inputs: ['@group(sources)']
+
+  test:
+    command: 'cargo test -p leptos-nebula'
+    inputs: ['@group(sources)']

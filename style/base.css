@@ -1,0 +1,27 @@
+/* Base global mínima: tipografia e foco. Usa só tokens semânticos. */
+html {
+  font-family: var(--lx-font-sans);
+  font-size: 16px;
+  line-height: var(--lx-line-height);
+  color: var(--lx-color-on-surface);
+  background: var(--lx-color-bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-size: var(--lx-font-size-md);
+  background: var(--lx-color-bg);
+  color: var(--lx-color-on-surface);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: var(--lx-font-weight-heading);
+  letter-spacing: var(--lx-letter-spacing-heading);
+}
+
+:focus-visible {
+  outline: 2px solid var(--lx-color-focus);
+  outline-offset: 2px;
+}
