@@ -157,6 +157,13 @@ impl Registry {
         self.0.borrow().entries.iter().any(|(i, _)| *i == id)
     }
 
+    /// Nome (diagnóstico) com que o filho se registrou, se ainda estiver registrado.
+    pub fn name_of(&self, id: FormChildId) -> Option<String> {
+        let inner = self.0.borrow();
+        let (_, child) = inner.entries.iter().find(|(i, _)| *i == id)?;
+        child.name.clone()
+    }
+
     /// Ids registrados, na ordem de registro.
     pub fn children(&self) -> Vec<FormChildId> {
         self.0.borrow().entries.iter().map(|(i, _)| *i).collect()

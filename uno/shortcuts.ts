@@ -110,6 +110,8 @@ export const shortcuts: Shortcuts = {
   'lx-badge-align-bottom': p('vertical-align', 'bottom'),
 
   // ── Banner ────────────────────────────────────────────────────────────────
+  'lx-form': 'relative',
+
   'lx-banner': [
     'flex items-center box-border border border-solid',
     `gap-[${sp('md')}]`,

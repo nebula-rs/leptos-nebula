@@ -418,6 +418,7 @@ h1, h2, h3, h4, h5, h6 {
 .lx-item-clickable:hover{background:var(--lx-item-hover-bg);}
 .lx-tab-idle:hover{color:var(--lx-color-on-surface);}
 .lx-btn-unelevated:active{filter:var(--lx-state-active-filter);}
+.lx-form{position:relative;}
 .lx-list{margin:0;box-sizing:border-box;display:flex;flex-direction:column;list-style-type:none;padding:0;}
 .lx-separator-spaced-h{margin-top:var(--lx-space-md);margin-bottom:var(--lx-space-md);}
 .lx-separator-spaced-v{margin-left:var(--lx-space-md);margin-right:var(--lx-space-md);}
