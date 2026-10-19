@@ -13,7 +13,11 @@ hydrate = ["leptos/hydrate"]
 ssr     = ["leptos/ssr"]
 
 [dependencies]
+futures       = { workspace = true }
 leptos        = { workspace = true }
 leptos_meta   = { workspace = true }
 wasm-bindgen  = { workspace = true }
 web-sys       = { workspace = true, features = ["Window", "Document", "Element", "Storage", "MediaQueryList", "MediaQueryListEvent"] }
+
+[dev-dependencies]
+futures = { workspace = true, features = ["executor"] }

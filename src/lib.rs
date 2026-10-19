@@ -8,6 +8,9 @@
 //! lib não fixa `csr`/`hydrate`/`ssr` — quem decide é o app (ADR-0007).
 
 mod color;
+// Só a coordenação pura por enquanto; o `<Form>` que a consome vem na R-11.
+#[allow(dead_code)]
+mod form;
 mod styles;
 mod theme;
 mod util;
