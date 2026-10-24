@@ -17,26 +17,26 @@ use crate::{Color, Icon, util::cls};
 /// `<FieldPrepend slot:prepend>…</FieldPrepend>`.
 #[slot]
 pub struct FieldPrepend {
-    children: ChildrenFn,
+    pub(crate) children: ChildrenFn,
 }
 
 /// Slot `append` do [`Field`]: dentro da caixa, depois do controle.
 /// `<FieldAppend slot:append>…</FieldAppend>`.
 #[slot]
 pub struct FieldAppend {
-    children: ChildrenFn,
+    pub(crate) children: ChildrenFn,
 }
 
 /// Slot `before` do [`Field`]: fora da caixa, à esquerda. `<FieldBefore slot:before>…</FieldBefore>`.
 #[slot]
 pub struct FieldBefore {
-    children: ChildrenFn,
+    pub(crate) children: ChildrenFn,
 }
 
 /// Slot `after` do [`Field`]: fora da caixa, à direita. `<FieldAfter slot:after>…</FieldAfter>`.
 #[slot]
 pub struct FieldAfter {
-    children: ChildrenFn,
+    pub(crate) children: ChildrenFn,
 }
 
 /// Slot de hint do [`Field`]: no rodapé; tem precedência sobre a prop `hint`.
@@ -44,7 +44,7 @@ pub struct FieldAfter {
 /// o texto).
 #[slot]
 pub struct FieldHint {
-    children: ChildrenFn,
+    pub(crate) children: ChildrenFn,
 }
 
 /// Slot de erro do [`Field`]: no rodapé, no lugar do hint quando há erro; tem precedência sobre
@@ -52,7 +52,7 @@ pub struct FieldHint {
 /// porque `error` já é o sinal de erro).
 #[slot]
 pub struct FieldError {
-    children: ChildrenFn,
+    pub(crate) children: ChildrenFn,
 }
 
 /// O que o [`Field`] entrega ao controle que ele contém (o `Input` da R-16 o usa).
@@ -99,7 +99,7 @@ const FOCUSABLE: &str =
 /// acima da caixa. O padrão de `design` é `Outlined` (no Quasar, `standard`).
 ///
 /// Sem `for_`, nenhum id é gerado e o label não se associa ao controle: passe `for_` com o `id`
-/// do `<input>`.
+/// do `<input>` (o [`Input`](crate::Input) já faz isso, e gera o id se faltar).
 ///
 /// Validação: `validation` (de [`use_validate`](crate::use_validate)) e/ou o `error` e
 /// `error_message` externos. Com erro, o rodapé mostra a mensagem (ou o slot `error_slot`) no
@@ -107,7 +107,7 @@ const FOCUSABLE: &str =
 /// esconde). Com `validation`, o `focusout` valida (conforme `lazy_rules`) e o `Form` foca o
 /// campo inválido.
 ///
-/// Ainda não: `reactive_rules`, `clearable`, `counter`, `loading`,
+/// Ainda não: `reactive_rules`, `counter`, `loading` (`clearable` está no [`Input`](crate::Input)),
 /// `rounded`, `square`, `bg_color`, `label_color`, `item_aligned`, `dark`, `autofocus`, os slots
 /// `label`/`counter`/`loading`, designs `Standard`/`Standout`.
 #[component]

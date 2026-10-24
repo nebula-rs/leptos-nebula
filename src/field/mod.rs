@@ -9,6 +9,7 @@ mod state;
 mod validate;
 mod validation;
 
+pub(crate) use component::FieldProps;
 pub use component::{
     Field, FieldAfter, FieldAppend, FieldBefore, FieldContext, FieldError, FieldHint, FieldPrepend,
     use_field_context,

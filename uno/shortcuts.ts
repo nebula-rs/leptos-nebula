@@ -160,9 +160,24 @@ const field: Shortcuts = {
   'lx-field-error-icon': `flex flex-none items-center ${color('negative')}`,
 }
 
+// ── Input ─────────────────────────────────────────────────────────────────
+const input: Shortcuts = {
+  // `<textarea>` (junto de `lx-field-native`): vertical, com respiro em cima e embaixo.
+  'lx-input-textarea': `resize-y py-[${sp('sm')}]`,
+  // Botão de limpar (`clearable`): ícone nu, com anel de foco do teclado.
+  'lx-input-clear': [
+    'inline-flex items-center justify-center flex-none m-0 p-0 border-0 bg-transparent cursor-pointer',
+    p('color', 'inherit'),
+    p('border-radius', v('radius-sm')),
+    'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2',
+    'focus-visible:[outline-color:var(--lx-tone)]',
+  ].join(' '),
+}
+
 export const shortcuts: Shortcuts = {
   ...tones,
   ...field,
+  ...input,
 
   // ── Icon ──────────────────────────────────────────────────────────────────
   'lx-icon': 'inline-block shrink-0 align-middle',
