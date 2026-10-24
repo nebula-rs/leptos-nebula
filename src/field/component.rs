@@ -1,13 +1,17 @@
 //! `<Field>`, os slots e o `FieldContext` (≈ `QField` / `use-field` do Quasar).
 
-use leptos::{ev, prelude::*};
+use std::rc::Rc;
+
+use leptos::{ev, html, prelude::*};
 use wasm_bindgen::JsCast;
 
 use super::state::{
-    FieldDesign, bottom_class, control_class, editable_class, hint_visible, is_floating,
+    Bottom, FieldDesign, bottom_class, bottom_content, control_class, editable_class, is_floating,
     label_class, label_space_class, placeholder_class, size_class,
 };
-use crate::{Color, util::cls};
+use super::validate::{has_error, pick_message};
+use super::validation::FieldValidation;
+use crate::{Color, Icon, util::cls};
 
 /// Slot `prepend` do [`Field`]: dentro da caixa, antes do controle.
 /// `<FieldPrepend slot:prepend>…</FieldPrepend>`.
@@ -43,6 +47,14 @@ pub struct FieldHint {
     children: ChildrenFn,
 }
 
+/// Slot de erro do [`Field`]: no rodapé, no lugar do hint quando há erro; tem precedência sobre
+/// a mensagem. `<FieldError slot:error_slot>…</FieldError>` (o nome da prop é `error_slot`,
+/// porque `error` já é o sinal de erro).
+#[slot]
+pub struct FieldError {
+    children: ChildrenFn,
+}
+
 /// O que o [`Field`] entrega ao controle que ele contém (o `Input` da R-16 o usa).
 ///
 /// Obtenha com [`use_field_context`] dentro dos `children` do `Field`.
@@ -60,6 +72,10 @@ pub struct FieldContext {
     /// `id` do hint no rodapé, para o controle usar em `aria-describedby`. `None` sem `for_` ou
     /// sem hint.
     pub hint_id: Option<String>,
+    /// Há erro visível (regras ou `error` externo): o controle pode marcar `aria-invalid`.
+    pub has_error: Signal<bool>,
+    /// `id` da mensagem de erro no rodapé, para `aria-describedby`. `None` sem `for_`.
+    pub error_id: Option<String>,
     /// Classe do controle nativo (`<input>`, `<select>`, `<textarea>`): sem borda nem fundo,
     /// herda fonte e cor, e aplica a opacidade do `placeholder` conforme o label.
     pub control_class: &'static str,
@@ -85,9 +101,15 @@ const FOCUSABLE: &str =
 /// Sem `for_`, nenhum id é gerado e o label não se associa ao controle: passe `for_` com o `id`
 /// do `<input>`.
 ///
-/// Ainda não: validação (`rules`, `error`, `error_message`), `clearable`, `counter`, `loading`,
+/// Validação: `validation` (de [`use_validate`](crate::use_validate)) e/ou o `error` e
+/// `error_message` externos. Com erro, o rodapé mostra a mensagem (ou o slot `error_slot`) no
+/// lugar do hint, a caixa fica na cor `negative` e um ícone aparece no fim (`no_error_icon` o
+/// esconde). Com `validation`, o `focusout` valida (conforme `lazy_rules`) e o `Form` foca o
+/// campo inválido.
+///
+/// Ainda não: `reactive_rules`, `clearable`, `counter`, `loading`,
 /// `rounded`, `square`, `bg_color`, `label_color`, `item_aligned`, `dark`, `autofocus`, os slots
-/// `label`/`error`/`counter`/`loading`, designs `Standard`/`Standout`.
+/// `label`/`counter`/`loading`, designs `Standard`/`Standout`.
 #[component]
 pub fn Field(
     /// Texto do label.
@@ -127,11 +149,24 @@ pub fn Field(
     /// Não reserva a altura do rodapé.
     #[prop(optional)]
     hide_bottom_space: bool,
+    /// Validação do campo ([`use_validate`](crate::use_validate)).
+    #[prop(optional)]
+    validation: Option<FieldValidation>,
+    /// Erro externo: `Some(true)` mostra o estado de erro (soma-se ao das regras).
+    #[prop(optional, into)]
+    error: Signal<Option<bool>>,
+    /// Mensagem de erro externa; não vazia, vence a das regras.
+    #[prop(optional, into)]
+    error_message: Signal<String>,
+    /// Não mostra o ícone de erro.
+    #[prop(optional)]
+    no_error_icon: bool,
     #[prop(optional)] prepend: Option<FieldPrepend>,
     #[prop(optional)] append: Option<FieldAppend>,
     #[prop(optional)] before: Option<FieldBefore>,
     #[prop(optional)] after: Option<FieldAfter>,
     #[prop(optional)] hint_slot: Option<FieldHint>,
+    #[prop(optional)] error_slot: Option<FieldError>,
     /// O controle (slot default).
     children: Children,
 ) -> impl IntoView {
@@ -142,10 +177,33 @@ pub fn Field(
 
     let has_label = label.is_some();
     let has_hint = hint.is_some() || hint_slot.is_some();
-    let has_bottom = bottom_slots || has_hint;
+    // O rodapé existe com hint, `bottom_slots`, `validation` ou slot de erro. Com só o `error`
+    // externo, use `bottom_slots` para ele aparecer.
+    let has_bottom = bottom_slots || has_hint || validation.is_some() || error_slot.is_some();
     let hint_id = (has_hint)
         .then(|| for_.as_ref().map(|f| format!("{f}_hint")))
         .flatten();
+    let error_id = for_.as_ref().map(|f| format!("{f}_error"));
+    let has_err = Signal::derive(move || {
+        has_error(error.get(), validation.is_some_and(|v| v.has_error().get()))
+    });
+    let err_message = Signal::derive(move || {
+        pick_message(
+            &error_message.get(),
+            validation.and_then(|v| v.error_message().get()).as_deref(),
+        )
+    });
+    let box_ref = NodeRef::<html::Div>::new();
+    if let Some(v) = validation {
+        v.set_focus(Rc::new(move || {
+            box_ref
+                .get_untracked()
+                .and_then(|el| el.query_selector(FOCUSABLE).ok().flatten())
+                .and_then(|el| el.dyn_into::<web_sys::HtmlElement>().ok())
+                .is_some_and(|el| el.focus().is_ok())
+        }));
+        on_cleanup(move || v.clear_focus());
+    }
 
     provide_context(FieldContext {
         for_: for_.clone(),
@@ -153,6 +211,8 @@ pub fn Field(
         disable,
         readonly,
         hint_id: hint_id.clone(),
+        has_error: has_err,
+        error_id: error_id.clone(),
         control_class: "lx-field-native",
     });
     let control = children();
@@ -167,7 +227,12 @@ pub fn Field(
             color.tone_class(),
         ])
     };
-    let box_class = move || cls(["lx-field-box", control_class(design, focused.get())]);
+    let box_class = move || {
+        cls([
+            "lx-field-box",
+            control_class(design, focused.get(), has_err.get()),
+        ])
+    };
 
     let on_focusin = move |_: ev::FocusEvent| {
         if !disable.get_untracked() {
@@ -186,6 +251,9 @@ pub fn Field(
             .is_some_and(|(related, boxed)| boxed.contains(Some(&related)));
         if !inside {
             focused_raw.set(false);
+            if let Some(v) = validation {
+                v.on_blur();
+            }
         }
     };
     // Clicar no recuo da caixa (fora de qualquer controle) foca o controle nativo, como o
@@ -232,24 +300,52 @@ pub fn Field(
     let bottom_view = has_bottom.then(|| {
         view! {
             <div class=cls(["lx-field-bottom", bottom_class(hide_bottom_space)])>
-                {move || {
-                    (has_hint && hint_visible(hide_hint, focused.get()))
-                        .then(|| {
-                            let content = match (&hint_slot, &hint) {
-                                (Some(slot), _) => (slot.children)().into_any(),
-                                (None, Some(text)) => text.clone().into_any(),
-                                (None, None) => ().into_any(),
-                            };
+                {move || match bottom_content(has_err.get(), has_hint, hide_hint, focused.get()) {
+                    Bottom::Error => {
+                        let content = match (&error_slot, err_message.get()) {
+                            (Some(slot), _) => Some((slot.children)().into_any()),
+                            (None, Some(text)) => Some(text.into_any()),
+                            (None, None) => None,
+                        };
+                        content
+                            .map(|content| {
+                                view! {
+                                    <div class="lx-field-error" role="alert" id=error_id.clone()>
+                                        {content}
+                                    </div>
+                                }
+                                    .into_any()
+                            })
+                    }
+                    Bottom::Hint => {
+                        let content = match (&hint_slot, &hint) {
+                            (Some(slot), _) => (slot.children)().into_any(),
+                            (None, Some(text)) => text.clone().into_any(),
+                            (None, None) => ().into_any(),
+                        };
+                        Some(
                             view! {
                                 <div class="lx-field-hint" id=hint_id.clone()>
                                     {content}
                                 </div>
                             }
-                        })
+                                .into_any(),
+                        )
+                    }
+                    Bottom::Nothing => None,
                 }}
             </div>
         }
     });
+    let error_icon = move || {
+        (has_err.get() && !no_error_icon).then(|| {
+            view! {
+                <div class="lx-field-error-icon">
+                    <Icon name="i-lucide-circle-alert" />
+                </div>
+            }
+        })
+    };
 
     view! {
         <div class=root_class aria-disabled=move || disable.get().then_some("true")>
@@ -257,6 +353,7 @@ pub fn Field(
             <div class="lx-field-inner">
                 {label_view}
                 <div
+                    node_ref=box_ref
                     class=box_class
                     on:focusin=on_focusin
                     on:focusout=on_focusout
@@ -268,6 +365,7 @@ pub fn Field(
                         {control}
                         {suffix.map(|t| view! { <div class="lx-field-suffix">{t}</div> })}
                     </div>
+                    {error_icon}
                     {append.map(|a| view! { <div class="lx-field-marginal">{(a.children)()}</div> })}
                 </div>
                 {bottom_view}

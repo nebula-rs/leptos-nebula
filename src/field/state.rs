@@ -30,15 +30,41 @@ pub(crate) fn hint_visible(hide_hint: bool, focused: bool) -> bool {
     !hide_hint || focused
 }
 
-/// Classe da caixa do controle: design × foco (shortcuts completos).
-pub(crate) fn control_class(design: FieldDesign, focused: bool) -> &'static str {
-    match (design, focused) {
-        (FieldDesign::Outlined, false) => "lx-field-outlined-idle",
-        (FieldDesign::Outlined, true) => "lx-field-outlined-focused",
-        (FieldDesign::Filled, false) => "lx-field-filled-idle",
-        (FieldDesign::Filled, true) => "lx-field-filled-focused",
-        (FieldDesign::Borderless, false) => "lx-field-borderless-idle",
-        (FieldDesign::Borderless, true) => "lx-field-borderless-focused",
+/// Classe da caixa do controle: design × estado (shortcuts completos). O erro vence o foco.
+pub(crate) fn control_class(design: FieldDesign, focused: bool, error: bool) -> &'static str {
+    match (design, error, focused) {
+        (FieldDesign::Outlined, true, _) => "lx-field-outlined-error",
+        (FieldDesign::Outlined, false, false) => "lx-field-outlined-idle",
+        (FieldDesign::Outlined, false, true) => "lx-field-outlined-focused",
+        (FieldDesign::Filled, true, _) => "lx-field-filled-error",
+        (FieldDesign::Filled, false, false) => "lx-field-filled-idle",
+        (FieldDesign::Filled, false, true) => "lx-field-filled-focused",
+        (FieldDesign::Borderless, true, _) => "lx-field-borderless-error",
+        (FieldDesign::Borderless, false, false) => "lx-field-borderless-idle",
+        (FieldDesign::Borderless, false, true) => "lx-field-borderless-focused",
+    }
+}
+
+/// O que o rodapé mostra: o erro tem precedência sobre o hint (como no Quasar).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Bottom {
+    Error,
+    Hint,
+    Nothing,
+}
+
+pub(crate) fn bottom_content(
+    error: bool,
+    has_hint: bool,
+    hide_hint: bool,
+    focused: bool,
+) -> Bottom {
+    if error {
+        Bottom::Error
+    } else if has_hint && hint_visible(hide_hint, focused) {
+        Bottom::Hint
+    } else {
+        Bottom::Nothing
     }
 }
 
@@ -125,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn control_class_covers_every_design_and_focus() {
+    fn control_class_covers_every_design_and_state() {
         let designs = [
             FieldDesign::Outlined,
             FieldDesign::Filled,
@@ -133,19 +159,40 @@ mod tests {
         ];
         let mut seen = std::collections::HashSet::new();
         for d in designs {
-            for f in [false, true] {
-                assert!(seen.insert(control_class(d, f)), "classe repetida");
+            for (f, e) in [(false, false), (true, false), (false, true)] {
+                assert!(seen.insert(control_class(d, f, e)), "classe repetida");
             }
         }
-        assert_eq!(seen.len(), 6);
+        assert_eq!(seen.len(), 9);
         assert_eq!(
-            control_class(FieldDesign::Outlined, true),
+            control_class(FieldDesign::Outlined, true, false),
             "lx-field-outlined-focused"
         );
         assert_eq!(
-            control_class(FieldDesign::Filled, false),
+            control_class(FieldDesign::Filled, false, false),
             "lx-field-filled-idle"
         );
+    }
+
+    #[test]
+    fn error_wins_over_focus() {
+        for d in [
+            FieldDesign::Outlined,
+            FieldDesign::Filled,
+            FieldDesign::Borderless,
+        ] {
+            assert_eq!(control_class(d, true, true), control_class(d, false, true));
+        }
+    }
+
+    #[test]
+    fn error_replaces_the_hint_in_the_footer() {
+        assert_eq!(bottom_content(true, true, false, true), Bottom::Error);
+        assert_eq!(bottom_content(true, false, false, false), Bottom::Error);
+        assert_eq!(bottom_content(false, true, false, false), Bottom::Hint);
+        assert_eq!(bottom_content(false, true, true, false), Bottom::Nothing);
+        assert_eq!(bottom_content(false, true, true, true), Bottom::Hint);
+        assert_eq!(bottom_content(false, false, false, true), Bottom::Nothing);
     }
 
     #[test]

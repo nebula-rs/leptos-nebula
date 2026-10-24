@@ -6,9 +6,13 @@
 
 mod component;
 mod state;
+mod validate;
+mod validation;
 
 pub use component::{
-    Field, FieldAfter, FieldAppend, FieldBefore, FieldContext, FieldHint, FieldPrepend,
+    Field, FieldAfter, FieldAppend, FieldBefore, FieldContext, FieldError, FieldHint, FieldPrepend,
     use_field_context,
 };
 pub use state::FieldDesign;
+pub use validate::{LazyRules, Rule, RuleResult};
+pub use validation::{FieldValidation, ValidationOptions, use_validate};

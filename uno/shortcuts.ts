@@ -59,9 +59,12 @@ const mtVert = ['th+th', 'td+td'].map((c) => `[&_${c}]:${border('left')}`).join(
 // exclusivos (repouso × flutuando) cujas posições vêm de tokens do tema (ADR-0010).
 const fieldRing = (token: string) => p('box-shadow', `0 0 0 ${v('field-focus-ring-width')} ${token}`)
 const fieldUnderline = (token: string) => p('box-shadow', `0 1px 0 0 ${token}`)
-const fieldBoxVisual = (design: string, focused: boolean): string => {
+type FieldState = 'idle' | 'focused' | 'error'
+const fieldBoxVisual = (design: string, state: FieldState): string => {
   const w = v('border-width')
-  const tone = v('tone')
+  // O erro usa a cor `negative` (como o foco usa o tom do campo) e vence o foco.
+  const focused = state !== 'idle'
+  const tone = state === 'error' ? v('color-negative') : v('tone')
   const idleBorder = v('field-border')
   switch (design) {
     case 'outlined':
@@ -95,8 +98,9 @@ const fieldBoxVisual = (design: string, focused: boolean): string => {
 }
 const fieldBoxes: Shortcuts = Object.fromEntries(
   ['outlined', 'filled', 'borderless'].flatMap((d) => [
-    [`lx-field-${d}-idle`, fieldBoxVisual(d, false)],
-    [`lx-field-${d}-focused`, fieldBoxVisual(d, true)],
+    [`lx-field-${d}-idle`, fieldBoxVisual(d, 'idle')],
+    [`lx-field-${d}-focused`, fieldBoxVisual(d, 'focused')],
+    [`lx-field-${d}-error`, fieldBoxVisual(d, 'error')],
   ]),
 )
 const fieldLabel = (transform: string, bgToken: string | null) =>
@@ -152,6 +156,8 @@ const field: Shortcuts = {
   'lx-field-bottom-reserved': 'min-h-[var(--lx-field-bottom-height)]',
   'lx-field-bottom-free': 'min-h-0',
   'lx-field-hint': p('color', v('field-hint-color')),
+  'lx-field-error': p('color', v('color-negative')),
+  'lx-field-error-icon': `flex flex-none items-center ${color('negative')}`,
 }
 
 export const shortcuts: Shortcuts = {
