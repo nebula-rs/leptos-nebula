@@ -49,6 +49,65 @@ const tabsAlign: Shortcuts = Object.fromEntries(
   Object.entries(ALIGN_JUSTIFY).map(([k, j]) => [`lx-tabs-align-${k}`, p('justify-content', j)]),
 )
 
+// ── Dialog ────────────────────────────────────────────────────────────────
+const DIALOG_POSITIONS = ['standard', 'top', 'bottom', 'left', 'right'] as const
+const dialogAlign = {
+  standard: 'items-center justify-center',
+  top: 'items-start justify-center',
+  bottom: 'items-end justify-center',
+  left: 'items-center justify-start',
+  right: 'items-center justify-end',
+} as const
+const dpad = `[${v('dialog-padding')}]`
+// padding da área do painel: o lado encostado na borda não tem folga (em tela estreita,
+// top/bottom também não têm folga lateral)
+const dialogPad = {
+  standard: `p-${dpad}`,
+  top: `pt-0 pb-0 px-${dpad} max-sm:px-0`,
+  bottom: `pt-0 pb-0 px-${dpad} max-sm:px-0`,
+  left: `px-0 py-${dpad}`,
+  right: `px-0 py-${dpad}`,
+} as const
+const dr = v('dialog-radius')
+const dialogRadius = {
+  standard: dr,
+  top: `0 0 ${dr} ${dr}`,
+  bottom: `${dr} ${dr} 0 0`,
+  left: `0 ${dr} ${dr} 0`,
+  right: `${dr} 0 0 ${dr}`,
+} as const
+const dist = v('dialog-slide-distance')
+const dialogFrom = {
+  standard: `scale(${v('dialog-scale-from')})`,
+  top: `translateY(calc(-1 * ${dist}))`,
+  bottom: `translateY(${dist})`,
+  left: `translateX(calc(-1 * ${dist}))`,
+  right: `translateX(${dist})`,
+} as const
+
+const dialogInner: Shortcuts = {
+  'lx-dialog-inner-max': 'flex box-border w-full h-full p-0 pointer-events-none',
+  ...Object.fromEntries(
+    DIALOG_POSITIONS.map((pos) => [
+      `lx-dialog-inner-${pos}`,
+      `flex box-border w-full h-full pointer-events-none ${dialogAlign[pos]} ${dialogPad[pos]}`,
+    ]),
+  ),
+}
+const dialogBody: Shortcuts = Object.fromEntries(
+  DIALOG_POSITIONS.map((pos) => [
+    `lx-dialog-body-${pos}`,
+    [p('border-radius', dialogRadius[pos]), pos === 'top' || pos === 'bottom' ? 'max-sm:w-full' : ''].join(' ').trim(),
+  ]),
+)
+const dialogEnter: Shortcuts = Object.fromEntries(
+  DIALOG_POSITIONS.map((pos) => [
+    `lx-dialog-enter-${pos}`,
+    // reduced-motion: só o fade, sem deslocamento
+    `${p('opacity', '0')} ${p('transform', dialogFrom[pos])} motion-reduce:${p('transform', 'none')}`,
+  ]),
+)
+
 const mtCells = (px: string, py: string) =>
   ['th', 'td'].map((c) => `[&_${c}]:px-[${px}] [&_${c}]:py-[${py}]`).join(' ')
 const mtHoriz = ['th', 'td'].map((c) => `[&_${c}]:${border('bottom')}`).join(' ')
@@ -303,6 +362,52 @@ export const shortcuts: Shortcuts = {
   ].join(' '),
   'lx-empty-state-hint': `${p('color', v('empty-state-hint'))} max-w-[${v('empty-state-hint-max-width')}]`,
   'lx-empty-state-actions': `flex flex-wrap items-center justify-center gap-[${sp('sm')}] mt-[${sp('sm')}]`,
+
+  // ── Dialog ────────────────────────────────────────────────────────────────
+  // `<dialog>` nativo ocupa a janela inteira e é transparente; o painel (`lx-dialog-body`) é o
+  // que se vê. Posição, tamanho e estado (entrada/saída) são shortcuts completos e exclusivos.
+  'lx-dialog': [
+    'fixed inset-0 m-0 p-0 border-0 box-border overflow-hidden w-full h-full max-w-none max-h-none',
+    p('background', 'transparent'),
+    p('color', 'inherit'),
+    `backdrop:${p('background', v('dialog-scrim'))}`,
+    `backdrop:${p('backdrop-filter', v('dialog-backdrop'))}`,
+    `backdrop:${p('transition', `opacity ${v('dialog-duration')} ${v('dialog-easing')}`)}`,
+  ].join(' '),
+  'lx-dialog-scrim-shown': `backdrop:${p('opacity', '1')}`,
+  'lx-dialog-scrim-hidden': `backdrop:${p('opacity', '0')}`,
+  ...dialogInner,
+  'lx-dialog-body': [
+    'pointer-events-auto overflow-auto box-border',
+    p('background', v('dialog-bg')),
+    p('color', v('dialog-color')),
+    p('box-shadow', v('dialog-shadow')),
+    p(
+      'transition',
+      `opacity ${v('dialog-duration')} ${v('dialog-easing')}, transform ${v('dialog-duration')} ${v('dialog-easing')}`,
+    ),
+  ].join(' '),
+  ...dialogBody,
+  'lx-dialog-body-max': [
+    'w-full h-full',
+    p('max-width', '100vw'),
+    p('max-height', '100dvh'),
+    'rounded-none',
+  ].join(' '),
+  'lx-dialog-w-normal': p('max-width', `min(100%, ${v('dialog-max-width')})`),
+  'lx-dialog-w-full': 'w-full max-w-full',
+  'lx-dialog-h-pad': p('max-height', `calc(100dvh - 2 * ${v('dialog-padding')})`),
+  'lx-dialog-h-edge': p('max-height', '100dvh'),
+  'lx-dialog-h-full': 'h-full max-h-full',
+  'lx-dialog-open': `${p('opacity', '1')} ${p('transform', 'none')}`,
+  ...dialogEnter,
+  // "sacudir" do persistent: a animação termina sozinha (`animationend` limpa a classe)
+  'lx-dialog-shake': [
+    p('animation', `lx-dialog-shake ${v('dialog-shake-duration')} ease-in-out`),
+    `motion-reduce:${p('animation', 'none')}`,
+  ].join(' '),
+  // Bloqueio de rolagem do <html> (a classe é posta pelo componente, não vem de markup)
+  'lx-scroll-lock': `overflow-hidden ${p('scrollbar-gutter', 'stable')}`,
 
   // ── Card ──────────────────────────────────────────────────────────────────
   'lx-card': [

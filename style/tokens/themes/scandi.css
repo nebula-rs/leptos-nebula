@@ -152,6 +152,20 @@
   --lx-empty-state-title-weight: var(--lx-font-weight-strong);
   --lx-empty-state-hint: var(--lx-color-on-surface-muted);
   --lx-empty-state-hint-max-width: 28rem;
+  /* Dialog (<dialog> nativo; painel sobre o fundo `scrim`) */
+  --lx-dialog-bg: var(--lx-color-surface);
+  --lx-dialog-color: var(--lx-color-on-surface);
+  --lx-dialog-radius: var(--lx-radius-lg);
+  --lx-dialog-shadow: var(--lx-drawer-shadow);
+  --lx-dialog-padding: var(--lx-space-lg);
+  --lx-dialog-max-width: 35rem;
+  --lx-dialog-scrim: var(--lx-color-scrim);
+  --lx-dialog-backdrop: var(--lx-surface-backdrop);
+  --lx-dialog-duration: var(--lx-duration-medium);
+  --lx-dialog-easing: var(--lx-easing);
+  --lx-dialog-scale-from: 0.92;
+  --lx-dialog-slide-distance: 2.5rem;
+  --lx-dialog-shake-duration: 170ms;
   --lx-badge-radius: var(--lx-radius-pill);
   --lx-banner-radius: var(--lx-radius-md);
   --lx-card-radius: var(--lx-radius-lg);
