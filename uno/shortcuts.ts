@@ -275,6 +275,117 @@ const select: Shortcuts = {
   'lx-select-option-disabled': `lx-select-option-base cursor-not-allowed ${color('on-surface-muted')} ${p('opacity', '0.6')}`,
 }
 
+// ── BtnToggle ─────────────────────────────────────────────────────────────
+// Grupo de botões com uma opção ativa. Três designs; o item tem estados exclusivos
+// (ativo × inativo × desabilitado) como shortcuts COMPLETOS, e a base do item não define cor,
+// fundo nem raio. Cor "do tema" (sem `color`/`toggle_color`) lê tokens `--lx-btn-toggle-*`
+// (no scandi, o aspecto "segmented": trilho `surface-muted`, ativo em `surface` com sombra);
+// com cor, o item lê `--lx-tone*` (o grupo carrega a cor inativa; o item ativo, a sua).
+const btRadius = (outer: string, inner: string) => ({
+  only: `${outer}`,
+  first: `${outer} ${inner} ${inner} ${outer}`,
+  middle: `${inner}`,
+  last: `${inner} ${outer} ${outer} ${inner}`,
+})
+const btnTogglePositions: Shortcuts = Object.fromEntries(
+  (['normal', 'rounded'] as const).flatMap((kind) => {
+    const suffix = kind === 'rounded' ? '-rounded' : ''
+    const radii = btRadius(v(`btn-toggle-radius${suffix}`), v(`btn-toggle-radius-inner${suffix}`))
+    return Object.entries(radii).map(([pos, r]) => [
+      `lx-btn-toggle-pos-${pos}${suffix}`,
+      p('border-radius', r),
+    ])
+  }),
+)
+const btItem = (opts: {
+  bg: string
+  color: string
+  border: string
+  shadow?: string
+  hover?: string
+  disabled: boolean
+}): string =>
+  [
+    p('background', opts.bg),
+    p('color', opts.color),
+    p('border-color', opts.border),
+    opts.shadow ? p('box-shadow', opts.shadow) : '',
+    opts.disabled
+      ? `pointer-events-none cursor-not-allowed ${p('opacity', v('state-disabled-opacity'))}`
+      : `cursor-pointer ${opts.hover ?? ''}`,
+  ]
+    .filter(Boolean)
+    .join(' ')
+const btnToggleItems: Shortcuts = {}
+for (const disabled of [false, true]) {
+  const d = disabled ? '-disabled' : ''
+  const hoverSoft = `hover:${p('background', v('tone-soft'))}`
+  // unelevated: tema (tokens) ou cor (tone)
+  btnToggleItems[`lx-btn-toggle-item-unelevated-off${d}`] = btItem({
+    bg: 'transparent', color: v('btn-toggle-off-color'), border: 'transparent', disabled,
+    hover: `hover:${p('color', v('btn-toggle-off-hover-color'))}`,
+  })
+  btnToggleItems[`lx-btn-toggle-item-unelevated-off-tone${d}`] = btItem({
+    bg: 'transparent', color: v('tone'), border: 'transparent', disabled, hover: hoverSoft,
+  })
+  btnToggleItems[`lx-btn-toggle-item-unelevated-on${d}`] = btItem({
+    bg: v('btn-toggle-on-bg'), color: v('btn-toggle-on-color'), border: 'transparent',
+    shadow: v('btn-toggle-on-shadow'), disabled,
+  })
+  btnToggleItems[`lx-btn-toggle-item-unelevated-on-tone${d}`] = btItem({
+    bg: v('tone'), color: v('tone-contrast'), border: v('tone'), disabled,
+  })
+  btnToggleItems[`lx-btn-toggle-item-outline-off${d}`] = btItem({
+    bg: 'transparent', color: v('tone'), border: v('tone'), disabled, hover: hoverSoft,
+  })
+  btnToggleItems[`lx-btn-toggle-item-outline-on${d}`] = btItem({
+    bg: v('tone'), color: v('tone-contrast'), border: v('tone'), disabled,
+  })
+  btnToggleItems[`lx-btn-toggle-item-flat-off${d}`] = btItem({
+    bg: 'transparent', color: v('tone'), border: 'transparent', disabled, hover: hoverSoft,
+  })
+  btnToggleItems[`lx-btn-toggle-item-flat-on${d}`] = btItem({
+    bg: v('tone-soft'), color: v('tone'), border: 'transparent', disabled,
+  })
+}
+const trackBox = (radius: string) =>
+  [
+    p('background', v('btn-toggle-track-bg')),
+    p('border', `${v('border-width')} solid ${v('color-border')}`),
+    p('padding', v('btn-toggle-track-padding')),
+    p('gap', v('btn-toggle-track-gap')),
+    p('border-radius', v(radius)),
+  ].join(' ')
+const btnToggle: Shortcuts = {
+  // Grupo. `fit` × `spread` (largura); o design define trilho/colagem; raios e `gap` só nas variantes.
+  'lx-btn-toggle': 'box-border max-w-full align-middle',
+  'lx-btn-toggle-fit': 'inline-flex',
+  'lx-btn-toggle-spread': 'flex w-full [&>*]:flex-[1_1_0%] [&>*]:min-w-0',
+  // unelevated: trilho (no scandi, `surface-muted` com borda fina)
+  'lx-btn-toggle-track': trackBox('btn-toggle-track-radius'),
+  'lx-btn-toggle-track-rounded': trackBox('btn-toggle-track-radius-rounded'),
+  // outline: botões colados, bordas sobrepostas; flat: colados, sem borda
+  'lx-btn-toggle-joined-outline': 'gap-0 [&>*+*]:-ml-px',
+  'lx-btn-toggle-joined-flat': 'gap-0',
+  // Item (sem cor, fundo nem raio: vêm do estado e da posição)
+  'lx-btn-toggle-item': [
+    'relative inline-flex items-center justify-center box-border no-underline select-none whitespace-nowrap',
+    `gap-[${sp('sm')}] border border-solid`,
+    fs('sm'),
+    p('font-family', 'inherit'),
+    p('font-weight', v('btn-weight')),
+    p('text-transform', v('btn-transform')),
+    p('letter-spacing', v('btn-tracking')),
+    `transition-[color,background-color,box-shadow] duration-[${v('duration-fast')}]`,
+    'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:z-[1]',
+    'focus-visible:[outline-color:var(--lx-tone,var(--lx-color-primary))]',
+  ].join(' '),
+  'lx-btn-toggle-size-normal': `h-[${v('control-height')}] px-[${sp('md')}]`,
+  'lx-btn-toggle-size-dense': `h-[${v('control-height-sm')}] px-[${sp('sm')}]`,
+  ...btnTogglePositions,
+  ...btnToggleItems,
+}
+
 export const shortcuts: Shortcuts = {
   ...tones,
   ...field,
@@ -319,6 +430,8 @@ export const shortcuts: Shortcuts = {
     `hover:${p('background', v('tone-soft'))}`,
   ].join(' '),
   'lx-btn-disabled': `pointer-events-none cursor-not-allowed ${p('opacity', v('state-disabled-opacity'))}`,
+
+  ...btnToggle,
 
   // ── Badge ─────────────────────────────────────────────────────────────────
   'lx-badge': [

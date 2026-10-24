@@ -106,6 +106,22 @@
   --lx-btn-transform: none;
   --lx-btn-tracking: 0;
   --lx-btn-shadow: none;
+  /* BtnToggle (R-25). Scandi = "segmented": trilho surface-muted, ativo em surface com sombra leve;
+     cantos internos iguais aos externos (o `gap` separa os botões). Um tema "colado" zera os internos. */
+  --lx-btn-toggle-track-bg: var(--lx-color-surface-muted);
+  --lx-btn-toggle-track-padding: 2px;
+  --lx-btn-toggle-track-gap: 2px;
+  --lx-btn-toggle-track-radius: var(--lx-btn-radius);
+  --lx-btn-toggle-track-radius-rounded: var(--lx-radius-pill);
+  --lx-btn-toggle-radius: var(--lx-btn-radius);
+  --lx-btn-toggle-radius-inner: var(--lx-btn-radius);
+  --lx-btn-toggle-radius-rounded: var(--lx-radius-pill);
+  --lx-btn-toggle-radius-inner-rounded: var(--lx-radius-pill);
+  --lx-btn-toggle-off-color: var(--lx-color-on-surface-muted);
+  --lx-btn-toggle-off-hover-color: var(--lx-color-on-surface);
+  --lx-btn-toggle-on-bg: var(--lx-color-surface);
+  --lx-btn-toggle-on-color: var(--lx-color-on-surface);
+  --lx-btn-toggle-on-shadow: var(--lx-shadow-sm);
   /* Field: label (ADR-0010). Scandi: fixo acima da caixa — repouso = flutuando, sem transição. */
   --lx-field-label-space: 1.5rem;
   --lx-field-label-rest-transform: none;

@@ -4,6 +4,7 @@
 mod badge;
 mod banner;
 mod btn;
+mod btn_toggle;
 mod card;
 mod dialog;
 mod empty_state;
@@ -22,6 +23,7 @@ mod tooltip;
 pub use badge::{Badge, BadgeAlign};
 pub use banner::{Banner, BannerAction, BannerAvatar};
 pub use btn::{Btn, BtnDesign, BtnType};
+pub use btn_toggle::{BtnToggle, BtnToggleOption};
 pub use card::{Card, CardActions, CardSection};
 pub use dialog::{Dialog, DialogPosition};
 pub use empty_state::{EmptyState, EmptyStateActions};
