@@ -124,9 +124,48 @@ pub(crate) fn bottom_class(hide_bottom_space: bool) -> &'static str {
     }
 }
 
+/// Texto do `counter` (≈ `computedCounter` do `use-field.js`): `n`, ou `n / max` com limite.
+/// `len` conta unidades UTF-16, como o `String.length` do Quasar e o atributo `maxlength`.
+pub(crate) fn counter_text(len: usize, max: Option<u32>) -> String {
+    match max {
+        Some(max) => format!("{len} / {max}"),
+        None => len.to_string(),
+    }
+}
+
+/// O rodapé existe: com hint, `bottom_slots`, validação, slot de erro ou `counter` (≈ o
+/// `getBottom` do Quasar, que só pula o rodapé com `hide-bottom-space` sem contador nem mensagem).
+pub(crate) fn has_bottom(
+    bottom_slots: bool,
+    has_hint: bool,
+    has_validation: bool,
+    has_error_slot: bool,
+    has_counter: bool,
+) -> bool {
+    bottom_slots || has_hint || has_validation || has_error_slot || has_counter
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn counter_text_with_and_without_max() {
+        assert_eq!(counter_text(0, None), "0");
+        assert_eq!(counter_text(7, None), "7");
+        assert_eq!(counter_text(7, Some(20)), "7 / 20");
+        assert_eq!(counter_text(0, Some(0)), "0 / 0");
+    }
+
+    #[test]
+    fn bottom_exists_for_any_reason() {
+        assert!(!has_bottom(false, false, false, false, false));
+        assert!(has_bottom(false, false, false, false, true));
+        assert!(has_bottom(true, false, false, false, false));
+        assert!(has_bottom(false, true, false, false, false));
+        assert!(has_bottom(false, false, true, false, false));
+        assert!(has_bottom(false, false, false, true, false));
+    }
 
     #[test]
     fn floating_when_focused_filled_or_stacked() {

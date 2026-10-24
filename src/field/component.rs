@@ -6,12 +6,12 @@ use leptos::{ev, html, prelude::*};
 use wasm_bindgen::JsCast;
 
 use super::state::{
-    Bottom, FieldDesign, bottom_class, bottom_content, control_class, editable_class, is_floating,
-    label_class, label_space_class, placeholder_class, size_class,
+    Bottom, FieldDesign, bottom_class, bottom_content, control_class, counter_text, editable_class,
+    has_bottom, is_floating, label_class, label_space_class, placeholder_class, size_class,
 };
 use super::validate::{has_error, pick_message};
 use super::validation::FieldValidation;
-use crate::{Color, Icon, util::cls};
+use crate::{Color, Icon, Spinner, util::cls};
 
 /// Slot `prepend` do [`Field`]: dentro da caixa, antes do controle.
 /// `<FieldPrepend slot:prepend>…</FieldPrepend>`.
@@ -52,6 +52,23 @@ pub struct FieldHint {
 /// porque `error` já é o sinal de erro).
 #[slot]
 pub struct FieldError {
+    pub(crate) children: ChildrenFn,
+}
+
+/// Slot do contador do [`Field`]: no canto direito do rodapé, no lugar do texto `n / max`.
+/// `<FieldCounter slot:counter_slot>…</FieldCounter>` (o nome da prop é `counter_slot`, porque
+/// `counter` já é o booleano). Com o slot, o rodapé existe mesmo sem `counter`.
+#[slot]
+pub struct FieldCounter {
+    pub(crate) children: ChildrenFn,
+}
+
+/// Slot de carregamento do [`Field`]: no lugar do `Spinner`, antes do `append`, enquanto
+/// `loading` (ou uma validação assíncrona) está ativo.
+/// `<FieldLoading slot:loading_slot>…</FieldLoading>` (a prop é `loading_slot`: `loading` já é o
+/// sinal).
+#[slot]
+pub struct FieldLoading {
     pub(crate) children: ChildrenFn,
 }
 
@@ -107,9 +124,14 @@ const FOCUSABLE: &str =
 /// esconde). Com `validation`, o `focusout` valida (conforme `lazy_rules`) e o `Form` foca o
 /// campo inválido.
 ///
-/// Ainda não: `reactive_rules`, `counter`, `loading` (`clearable` está no [`Input`](crate::Input)),
-/// `rounded`, `square`, `bg_color`, `label_color`, `item_aligned`, `dark`, `autofocus`, os slots
-/// `label`/`counter`/`loading`, designs `Standard`/`Standout`.
+/// `counter` mostra `n` (ou `n / maxlength`) no canto direito do rodapé; quem sabe o tamanho do
+/// valor é o controle (`value_length`, em unidades UTF-16, como o atributo `maxlength`). `loading`
+/// (ou uma validação assíncrona em curso) mostra um [`Spinner`] depois do ícone de erro, ou o slot
+/// `loading_slot`.
+///
+/// Ainda não: `reactive_rules`, `max_values`, `rounded`, `square`, `bg_color`, `label_color`,
+/// `item_aligned`, `dark`, `autofocus`, o slot `label` (`clearable` está no
+/// [`Input`](crate::Input)), designs `Standard`/`Standout`.
 #[component]
 pub fn Field(
     /// Texto do label.
@@ -161,6 +183,21 @@ pub fn Field(
     /// Não mostra o ícone de erro.
     #[prop(optional)]
     no_error_icon: bool,
+    /// Contador no rodapé: `n` ou `n / maxlength` (≈ `counter` do Quasar).
+    #[prop(optional)]
+    counter: bool,
+    /// Tamanho do valor para o contador, em unidades UTF-16 (quem guarda o valor é o controle).
+    #[prop(optional, into)]
+    value_length: Signal<usize>,
+    /// Limite mostrado no contador (`n / max`).
+    #[prop(optional)]
+    maxlength: Option<u32>,
+    /// Mostra o `Spinner` (ou o slot `loading_slot`) no fim da caixa. Soma-se à validação
+    /// assíncrona em curso.
+    #[prop(optional, into)]
+    loading: Signal<bool>,
+    #[prop(optional)] counter_slot: Option<FieldCounter>,
+    #[prop(optional)] loading_slot: Option<FieldLoading>,
     #[prop(optional)] prepend: Option<FieldPrepend>,
     #[prop(optional)] append: Option<FieldAppend>,
     #[prop(optional)] before: Option<FieldBefore>,
@@ -177,9 +214,18 @@ pub fn Field(
 
     let has_label = label.is_some();
     let has_hint = hint.is_some() || hint_slot.is_some();
-    // O rodapé existe com hint, `bottom_slots`, `validation` ou slot de erro. Com só o `error`
-    // externo, use `bottom_slots` para ele aparecer.
-    let has_bottom = bottom_slots || has_hint || validation.is_some() || error_slot.is_some();
+    // O rodapé existe com hint, `bottom_slots`, `validation`, slot de erro ou contador. Com só o
+    // `error` externo, use `bottom_slots` para ele aparecer.
+    let has_counter = counter || counter_slot.is_some();
+    let has_bottom = has_bottom(
+        bottom_slots,
+        has_hint,
+        validation.is_some(),
+        error_slot.is_some(),
+        has_counter,
+    );
+    let is_loading =
+        Signal::derive(move || loading.get() || validation.is_some_and(|v| v.loading().get()));
     let hint_id = (has_hint)
         .then(|| for_.as_ref().map(|f| format!("{f}_hint")))
         .flatten();
@@ -297,9 +343,17 @@ pub fn Field(
             </label>
         }
     });
+    let counter_view = has_counter.then(|| {
+        let content = match &counter_slot {
+            Some(slot) => (slot.children)().into_any(),
+            None => (move || counter_text(value_length.get(), maxlength)).into_any(),
+        };
+        view! { <div class="lx-field-counter">{content}</div> }
+    });
     let bottom_view = has_bottom.then(|| {
         view! {
             <div class=cls(["lx-field-bottom", bottom_class(hide_bottom_space)])>
+                <div class="lx-field-messages">
                 {move || match bottom_content(has_err.get(), has_hint, hide_hint, focused.get()) {
                     Bottom::Error => {
                         let content = match (&error_slot, err_message.get()) {
@@ -334,6 +388,8 @@ pub fn Field(
                     }
                     Bottom::Nothing => None,
                 }}
+                </div>
+                {counter_view}
             </div>
         }
     });
@@ -344,6 +400,16 @@ pub fn Field(
                     <Icon name="i-lucide-circle-alert" />
                 </div>
             }
+        })
+    };
+
+    let loading_view = move || {
+        is_loading.get().then(|| {
+            let content = match &loading_slot {
+                Some(slot) => (slot.children)().into_any(),
+                None => view! { <Spinner color=color /> }.into_any(),
+            };
+            view! { <div class="lx-field-marginal">{content}</div> }
         })
     };
 
@@ -366,6 +432,7 @@ pub fn Field(
                         {suffix.map(|t| view! { <div class="lx-field-suffix">{t}</div> })}
                     </div>
                     {error_icon}
+                    {loading_view}
                     {append.map(|a| view! { <div class="lx-field-marginal">{(a.children)()}</div> })}
                 </div>
                 {bottom_view}

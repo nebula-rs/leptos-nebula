@@ -11,8 +11,8 @@ mod validation;
 
 pub(crate) use component::FieldProps;
 pub use component::{
-    Field, FieldAfter, FieldAppend, FieldBefore, FieldContext, FieldError, FieldHint, FieldPrepend,
-    use_field_context,
+    Field, FieldAfter, FieldAppend, FieldBefore, FieldContext, FieldCounter, FieldError, FieldHint,
+    FieldLoading, FieldPrepend, use_field_context,
 };
 pub use state::FieldDesign;
 pub use validate::{LazyRules, Rule, RuleResult};

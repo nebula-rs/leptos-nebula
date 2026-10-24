@@ -18,7 +18,8 @@ hydration_context = { workspace = true }
 leptos        = { workspace = true }
 leptos_meta   = { workspace = true }
 wasm-bindgen  = { workspace = true }
-web-sys       = { workspace = true, features = ["Window", "Document", "Element", "Storage", "MediaQueryList", "MediaQueryListEvent", "HtmlFormElement", "HtmlElement", "NodeList", "SubmitEvent", "Event", "FocusOptions", "Node", "FocusEvent", "MouseEvent", "KeyboardEvent", "HtmlInputElement", "HtmlTextAreaElement", "InputEvent", "ClipboardEvent", "CompositionEvent"] }
+js-sys        = { workspace = true }
+web-sys       = { workspace = true, features = ["Window", "Document", "Element", "Storage", "MediaQueryList", "MediaQueryListEvent", "HtmlFormElement", "HtmlElement", "NodeList", "SubmitEvent", "Event", "FocusOptions", "Node", "FocusEvent", "MouseEvent", "KeyboardEvent", "HtmlInputElement", "HtmlTextAreaElement", "InputEvent", "ClipboardEvent", "CompositionEvent", "CssStyleDeclaration", "Navigator"] }
 
 [dev-dependencies]
 futures = { workspace = true, features = ["executor"] }

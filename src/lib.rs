@@ -20,9 +20,9 @@ pub mod components;
 pub use color::{Align, Color};
 pub use components::*;
 pub use field::{
-    Field, FieldAfter, FieldAppend, FieldBefore, FieldContext, FieldDesign, FieldError, FieldHint,
-    FieldPrepend, FieldValidation, LazyRules, Rule, RuleResult, ValidationOptions,
-    use_field_context, use_validate,
+    Field, FieldAfter, FieldAppend, FieldBefore, FieldContext, FieldCounter, FieldDesign,
+    FieldError, FieldHint, FieldLoading, FieldPrepend, FieldValidation, LazyRules, Rule,
+    RuleResult, ValidationOptions, use_field_context, use_validate,
 };
 pub use form::{
     FocusFn, Form, FormChildId, FormChildOptions, FormHandle, ResetValidationFn, ValidateFn,

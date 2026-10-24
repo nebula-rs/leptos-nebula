@@ -3,7 +3,9 @@
 //! Especificação: `docs/ui/forms.md#input`. Aqui ficam o [`InputType`] (lógica pura, testada no
 //! host); o componente, o `InputHandle` e a geração do `id` estão em [`component`].
 
+mod autogrow;
 mod component;
+mod emit;
 mod mask;
 mod masking;
 

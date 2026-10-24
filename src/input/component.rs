@@ -10,12 +10,14 @@ use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, HtmlInputElement, HtmlTextAreaElement};
 
 use super::InputType;
+use super::autogrow::{Autogrow, needs_js};
 use super::mask::{FillMask, MaskProps, type_allows_mask};
 use super::masking::{DomEl, Masking, PropsChange};
 use crate::field::FieldProps;
 use crate::{
-    Color, Field, FieldAfter, FieldAppend, FieldBefore, FieldDesign, FieldError, FieldHint,
-    FieldPrepend, Icon, LazyRules, Rule, ValidationOptions, use_field_context, use_validate,
+    Color, Field, FieldAfter, FieldAppend, FieldBefore, FieldCounter, FieldDesign, FieldError,
+    FieldHint, FieldLoading, FieldPrepend, Icon, LazyRules, Rule, ValidationOptions,
+    use_field_context, use_validate,
 };
 
 /// Os dois possíveis controles nativos do `Input` (só um deles é montado).
@@ -148,10 +150,17 @@ fn generated_id() -> String {
 /// o `value` guarda o texto **mascarado** (como o `v-model` do Quasar) ou, com `unmasked_value`,
 /// só os dados; as `rules` e o `Form` veem o `value`. Ver `docs/ui/forms.md#mascara`.
 ///
-/// Ainda não: `mask_tokens` (existe na máscara pura, não na prop), `debounce`, `autogrow`, `counter`, `loading`, `shadow_text` (R-18),
-/// `type="file"`, `input_class`/`input_style`, `model_modifiers`, `display_value`, `on_paste`,
-/// `bg_color`, `rounded`, `square`, `dark`, `reactive_rules`, os slots `label`/`counter`/
-/// `loading`/`control`. `value` é sempre `String` (sem conversão numérica).
+/// **`debounce`** (ms): o texto exibido acompanha cada tecla, mas o `value` só é escrito depois
+/// da pausa; blur, `change`, Enter e o descarte do campo o entregam na hora, e `clearable` o
+/// cancela. **`autogrow`** faz do controle um `<textarea>` que cresce e encolhe com o conteúdo.
+/// **`counter`** mostra `n` (ou `n / maxlength`) no rodapé; **`loading`** mostra um `Spinner`
+/// no fim da caixa (no lugar do botão `clearable`); **`shadow_text`** é um texto-sombra depois
+/// do que foi digitado (autocompletar). Ver `docs/ui/forms.md#input`.
+///
+/// Ainda não: `mask_tokens` (existe na máscara pura, não na prop), `type="file"`,
+/// `input_class`/`input_style`, `model_modifiers`, `display_value`, `on_paste`, `bg_color`,
+/// `rounded`, `square`, `dark`, `reactive_rules`, `max_values` e os slots `label`/`control`.
+/// `value` é sempre `String` (sem conversão numérica).
 #[component]
 pub fn Input(
     /// O valor (`v-model`).
@@ -194,6 +203,19 @@ pub fn Input(
     /// O `value` guarda só os dados, sem os separadores da máscara.
     #[prop(optional, into)]
     unmasked_value: Signal<bool>,
+    // — Debounce, autogrow, shadow —
+    /// Pausa em ms antes de escrever em `value` (`Some(0)` = um ciclo de espera). Sem ela, cada
+    /// tecla escreve na hora.
+    #[prop(optional)]
+    debounce: Option<u32>,
+    /// O controle é um `<textarea>` de uma linha que cresce e encolhe com o conteúdo (sem
+    /// `rows` fixas nem redimensionar à mão). Vale como `type_=Textarea`.
+    #[prop(optional)]
+    autogrow: bool,
+    /// Texto-sombra depois do que foi digitado (≈ `shadow-text`); vazio = sem sombra. Aparece
+    /// com o campo focado.
+    #[prop(optional, into)]
+    shadow_text: Signal<String>,
     // — Field —
     #[prop(optional, into)] label: Option<String>,
     #[prop(optional)] stack_label: bool,
@@ -208,6 +230,12 @@ pub fn Input(
     #[prop(optional, into)] readonly: Signal<bool>,
     #[prop(optional)] bottom_slots: bool,
     #[prop(optional)] hide_bottom_space: bool,
+    /// Contador no rodapé: `n` ou `n / maxlength`.
+    #[prop(optional)]
+    counter: bool,
+    /// Spinner no fim da caixa; esconde o botão `clearable` enquanto dura.
+    #[prop(optional, into)]
+    loading: Signal<bool>,
     // — Validação —
     /// Regras (`use_validate`).
     #[prop(optional)]
@@ -240,7 +268,10 @@ pub fn Input(
     #[prop(optional)] after: Option<FieldAfter>,
     #[prop(optional)] hint_slot: Option<FieldHint>,
     #[prop(optional)] error_slot: Option<FieldError>,
+    #[prop(optional)] counter_slot: Option<FieldCounter>,
+    #[prop(optional)] loading_slot: Option<FieldLoading>,
 ) -> impl IntoView {
+    let textarea = type_.is_textarea() || autogrow;
     let id = id.unwrap_or_else(generated_id);
     let native = Native {
         input: NodeRef::new(),
@@ -275,12 +306,17 @@ pub fn Input(
             fill_mask: fill_mask.get_untracked(),
             reverse_fill_mask: reverse_fill_mask.get_untracked(),
             unmasked_value: unmasked_value.get_untracked(),
-            text_type: type_allows_mask(type_, false),
+            text_type: type_allows_mask(type_, autogrow),
             ..Default::default()
         },
+        debounce,
     );
     let inner = masking.inner;
     let has_value = Signal::derive(move || !inner.with(String::is_empty));
+    let value_length = Signal::derive(move || value.with(|v| v.encode_utf16().count()));
+    let emitter = masking.emitter;
+    // O descarte do campo entrega o que estava adiado (≈ `onBeforeUnmount`).
+    on_cleanup(move || emitter.flush());
 
     // O modelo mudou (por fora ou pelo eco do próprio `Input`).
     Effect::new(move |prev: Option<()>| {
@@ -318,12 +354,23 @@ pub fn Input(
         }
     });
 
-    let show_clear =
-        Signal::derive(move || clearable && has_value.get() && !disable.get() && !readonly.get());
+    // Como o Quasar: o spinner toma o lugar do botão de limpar.
+    let busy = Signal::derive(move || loading.get() || validation.loading().get());
+    let show_clear = Signal::derive(move || {
+        clearable && has_value.get() && !disable.get() && !readonly.get() && !busy.get()
+    });
     let clear = move || {
         let previous = value.get_untracked();
         native.focus();
+        // Limpar é imediato: descarta o que o `debounce` segurava (≈ `onClear`).
+        emitter.cancel();
+        let changed = !previous.is_empty();
         value.set(String::new());
+        if !changed {
+            // O modelo já era vazio (texto digitado ainda adiado): `value` não notifica, então o
+            // texto exibido é limpo à mão.
+            masking.on_model(String::new());
+        }
         if let Some(cb) = on_clear {
             cb.run(previous);
         }
@@ -370,7 +417,9 @@ pub fn Input(
         placeholder,
         maxlength,
         autofocus,
-        value,
+        textarea,
+        autogrow,
+        shadow_text,
         masking,
         reverse_fill_mask,
         disable,
@@ -402,6 +451,12 @@ pub fn Input(
     props.has_value = has_value;
     props.bottom_slots = bottom_slots;
     props.hide_bottom_space = hide_bottom_space;
+    props.counter = counter;
+    props.value_length = value_length;
+    props.maxlength = maxlength;
+    props.loading = loading;
+    props.counter_slot = counter_slot;
+    props.loading_slot = loading_slot;
     props.validation = Some(validation);
     props.no_error_icon = no_error_icon;
     props.prepend = prepend;
@@ -422,7 +477,9 @@ fn NativeControl(
     placeholder: Option<String>,
     maxlength: Option<u32>,
     autofocus: bool,
-    value: RwSignal<String>,
+    textarea: bool,
+    autogrow: bool,
+    shadow_text: Signal<String>,
     masking: Masking,
     reverse_fill_mask: Signal<bool>,
     disable: Signal<bool>,
@@ -434,11 +491,18 @@ fn NativeControl(
     on_keydown: Option<Callback<ev::KeyboardEvent>>,
 ) -> impl IntoView {
     let ctx = use_field_context().expect("o controle do Input vai dentro de um <Field>");
-    let class = if type_.is_textarea() {
-        format!("{} lx-input-textarea", ctx.control_class)
-    } else {
-        ctx.control_class.to_string()
+    let class = match (textarea, autogrow) {
+        (false, _) => ctx.control_class.to_string(),
+        (true, false) => format!(
+            "{} lx-input-textarea lx-input-textarea-resize",
+            ctx.control_class
+        ),
+        (true, true) => format!(
+            "{} lx-input-textarea lx-input-textarea-autogrow",
+            ctx.control_class
+        ),
     };
+    let focused = ctx.focused;
     let has_error = ctx.has_error;
     let described_by = {
         let (error_id, hint_id) = (ctx.error_id.clone(), ctx.hint_id.clone());
@@ -455,27 +519,53 @@ fn NativeControl(
     let tabindex = autofocus.then_some("0");
     let inner = masking.inner;
 
-    // Sem máscara: só escreve se mudou (um `type="number"` com texto incompleto (`1e`) tem
-    // `value` vazio, e regravar o mesmo valor apagaria o que se digitou). Com máscara, o texto
-    // passa por `Masking::on_input`, que remascara, posiciona o cursor e escreve o modelo.
+    // `autogrow` sem `field-sizing: content`: mede em JS (uma vez por quadro). Só no navegador.
+    let grow = Autogrow::new(native.textarea);
+    let grow_js = StoredValue::new(false);
+    if autogrow {
+        Effect::new(move |_| {
+            if native.textarea.get().is_some() && needs_js() {
+                grow_js.set_value(true);
+                grow.adjust();
+            }
+        });
+        // O texto exibido mudou (digitar, limpar, o app atribuiu `value`): remede.
+        Effect::new(move |_| {
+            inner.track();
+            if grow_js.get_value() {
+                grow.adjust();
+            }
+        });
+        on_cleanup(move || grow.cancel());
+    }
+
+    // Sem máscara, o texto exibido acompanha na hora e `value` espera o `debounce`; com máscara,
+    // o texto passa por `Masking::on_input`, que remascara, posiciona o cursor e emite o modelo.
     let handle_input = move |ev: web_sys::Event| {
         let text = event_target_value(&ev);
         if masking.has_mask() {
             let input_type = ev.dyn_ref::<web_sys::InputEvent>().map(|e| e.input_type());
             masking.on_input(&text, input_type);
-        } else if value.with_untracked(|v| *v != text) {
-            inner.set(text.clone());
-            value.set(text);
+        } else {
+            masking.on_input_plain(text);
+        }
+        if grow_js.get_value() {
+            grow.adjust();
         }
     };
     let handle_change = move |ev: web_sys::Event| {
         let text = event_target_value(&ev);
         masking.on_composition_end(&text);
+        masking.emitter.flush();
         if let Some(cb) = on_change {
             cb.run(text);
         }
     };
     let handle_keydown = move |ev: ev::KeyboardEvent| {
+        // Enter envia o formulário: o que o `debounce` segurava precisa estar no `value` antes.
+        if !textarea && ev.key() == "Enter" {
+            masking.emitter.flush();
+        }
         if let Some(cb) = on_keydown {
             cb.run(ev.clone());
         }
@@ -504,20 +594,48 @@ fn NativeControl(
             cb.run(ev);
         }
     };
+    // `focusout` borbulha até a caixa do `Field`, que valida no blur: o `value` já precisa estar
+    // atualizado. Cobre também a troca de foco para dentro da caixa (botão de limpar).
+    let handle_focusout = move |_: ev::FocusEvent| masking.emitter.flush();
     let handle_blur = move |ev: ev::FocusEvent| {
+        masking.emitter.flush();
         if let Some(cb) = on_blur {
             cb.run(ev);
         }
     };
 
-    if type_.is_textarea() {
+    let shadow = move || {
+        let text = shadow_text.get();
+        (!text.is_empty()).then(|| {
+            let wrap = if textarea {
+                "lx-field-shadow-multiline"
+            } else {
+                "lx-field-shadow-line"
+            };
+            let state = if focused.get() {
+                "lx-field-shadow-focused"
+            } else {
+                "lx-field-shadow-idle"
+            };
+            view! {
+                <div class=format!("{wrap} {state}") aria-hidden="true">
+                    <div>
+                        <span class="lx-field-shadow-gap">{move || inner.get()}</span>
+                        <span>{text}</span>
+                    </div>
+                </div>
+            }
+        })
+    };
+
+    let control = if textarea {
         view! {
             <textarea
                 node_ref=native.textarea
                 id=id
                 name=name
                 class=class
-                rows="6"
+                rows=if autogrow { "1" } else { "6" }
                 placeholder=placeholder
                 maxlength=maxlength
                 tabindex=tabindex
@@ -531,6 +649,7 @@ fn NativeControl(
                 on:change=handle_change
                 on:focus=handle_focus
                 on:blur=handle_blur
+                on:focusout=handle_focusout
                 on:keydown=handle_keydown
                 on:click=handle_click
                 on:paste=handle_paste
@@ -563,6 +682,7 @@ fn NativeControl(
                 on:change=handle_change
                 on:focus=handle_focus
                 on:blur=handle_blur
+                on:focusout=handle_focusout
                 on:keydown=handle_keydown
                 on:click=handle_click
                 on:paste=handle_paste
@@ -571,5 +691,9 @@ fn NativeControl(
             />
         }
         .into_any()
+    };
+    view! {
+        {control}
+        {shadow}
     }
 }

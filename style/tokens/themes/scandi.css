@@ -132,6 +132,13 @@
   --lx-field-disabled-opacity: var(--lx-state-disabled-opacity);
   --lx-field-hint-color: var(--lx-color-on-surface-muted);
   --lx-field-bottom-height: 1.25rem;
+  --lx-field-counter-color: var(--lx-color-on-surface-muted);
+  /* Field: texto-sombra (shadow_text); como o Quasar, só aparece com foco */
+  --lx-field-shadow-color: var(--lx-color-on-surface-muted);
+  --lx-field-shadow-opacity: 0;
+  --lx-field-shadow-opacity-focused: 0.7;
+  /* Input: altura máxima do autogrow (com mais conteúdo, o controle rola) */
+  --lx-input-autogrow-max-height: none;
   /* Spinner (rotação lenta, não parada, com prefers-reduced-motion) */
   --lx-spinner-rotate-duration: 2s;
   --lx-spinner-dash-duration: 1.5s;

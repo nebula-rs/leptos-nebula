@@ -158,12 +158,30 @@ const field: Shortcuts = {
   'lx-field-hint': p('color', v('field-hint-color')),
   'lx-field-error': p('color', v('color-negative')),
   'lx-field-error-icon': `flex flex-none items-center ${color('negative')}`,
+  // Rodapé: mensagens (hint/erro) ocupam o espaço; o contador fica à direita.
+  'lx-field-messages': 'flex-1 min-w-0',
+  'lx-field-counter': `flex-none ml-auto pl-[${sp('sm')}] leading-none ${p('color', v('field-counter-color'))}`,
+  // `shadow_text`: sobreposto ao controle; o texto já digitado fica invisível (só ocupa o
+  // espaço) e a sombra vem logo depois. Claro só com foco (como o Quasar).
+  'lx-field-shadow-line': `absolute inset-0 flex items-center overflow-hidden whitespace-nowrap pointer-events-none ${p('font', 'inherit')} ${p('color', v('field-shadow-color'))}`,
+  'lx-field-shadow-multiline': `absolute inset-0 flex items-start overflow-hidden whitespace-pre-wrap pointer-events-none py-[${sp('sm')}] ${p('overflow-wrap', 'break-word')} ${p('font', 'inherit')} ${p('color', v('field-shadow-color'))}`,
+  'lx-field-shadow-idle': p('opacity', v('field-shadow-opacity')),
+  'lx-field-shadow-focused': p('opacity', v('field-shadow-opacity-focused')),
+  'lx-field-shadow-gap': p('visibility', 'hidden'),
 }
 
 // ── Input ─────────────────────────────────────────────────────────────────
 const input: Shortcuts = {
-  // `<textarea>` (junto de `lx-field-native`): vertical, com respiro em cima e embaixo.
-  'lx-input-textarea': `resize-y py-[${sp('sm')}]`,
+  // `<textarea>` (junto de `lx-field-native`): com respiro em cima e embaixo; o redimensionamento
+  // é um dos dois exclusivos abaixo.
+  'lx-input-textarea': `py-[${sp('sm')}]`,
+  'lx-input-textarea-resize': 'resize-y',
+  // `autogrow`: o navegador mede (`field-sizing`); sem suporte, `autogrow.rs` grava o `height`.
+  'lx-input-textarea-autogrow': [
+    'box-border resize-none',
+    p('field-sizing', 'content'),
+    p('max-height', v('input-autogrow-max-height')),
+  ].join(' '),
   // Botão de limpar (`clearable`): ícone nu, com anel de foco do teclado.
   'lx-input-clear': [
     'inline-flex items-center justify-center flex-none m-0 p-0 border-0 bg-transparent cursor-pointer',

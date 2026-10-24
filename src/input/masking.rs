@@ -7,6 +7,7 @@ use leptos::task::spawn_local;
 use web_sys::{HtmlInputElement, HtmlTextAreaElement};
 
 use super::component::Native;
+use super::emit::Emitter;
 use super::mask::{
     Direction, MaskControl, MaskKey, MaskKeyEvent, MaskOutput, MaskProps, MaskState, char_to_utf16,
     utf16_to_char,
@@ -109,9 +110,10 @@ pub(super) struct Masking {
     state: StoredValue<MaskState, LocalStorage>,
     /// O texto exibido no controle (≈ `innerValue`). Sem máscara espelha `value`.
     pub inner: RwSignal<String>,
-    /// Último valor que o próprio `Input` escreveu em `value` (para o `Effect` do modelo ignorar o
-    /// eco: ≈ `stopValueWatcher` + `emitCachedValue`).
-    emitted: StoredValue<Option<String>>,
+    /// Escreve em `value` (com `debounce`, depois da pausa) e guarda o eco do que o próprio
+    /// `Input` escreveu, para o `Effect` do modelo ignorá-lo (≈ `stopValueWatcher`/
+    /// `emitCachedValue`).
+    pub emitter: Emitter,
     /// IME em curso com máscara ativa (≈ `qComposing`).
     composing: StoredValue<bool>,
     value: RwSignal<String>,
@@ -119,7 +121,12 @@ pub(super) struct Masking {
 }
 
 impl Masking {
-    pub fn new(value: RwSignal<String>, native: Native, props: MaskProps) -> Self {
+    pub fn new(
+        value: RwSignal<String>,
+        native: Native,
+        props: MaskProps,
+        debounce: Option<u32>,
+    ) -> Self {
         let state = MaskState::new(MaskProps {
             model: value.get_untracked(),
             ..props
@@ -128,7 +135,7 @@ impl Masking {
         Self {
             state: StoredValue::new_local(state),
             inner,
-            emitted: StoredValue::new(None),
+            emitter: Emitter::new(value, debounce),
             composing: StoredValue::new(false),
             value,
             native,
@@ -160,10 +167,11 @@ impl Masking {
 
     fn apply(&self, out: MaskOutput) {
         if let Some(v) = out.emit {
-            if out.stop_watcher {
-                self.emitted.set_value(Some(v.clone()));
-            }
-            self.value.set(v);
+            self.emitter.emit(v, out.stop_watcher);
+        } else if out.cancel_pending {
+            // O texto exibido voltou a coincidir com o modelo: uma emissão adiada de um estado
+            // intermediário ficou velha (#17568).
+            self.emitter.cancel();
         }
         self.sync_inner();
     }
@@ -174,6 +182,17 @@ impl Masking {
         spawn_local(async move {
             this.run(|st, ctl| st.flush_caret(ctl));
         });
+    }
+
+    /// `onInput` sem máscara: o texto exibido acompanha na hora; o `value` pode esperar o
+    /// `debounce`. Sem `debounce`, só escreve se o texto mudou (um `type="number"` com texto
+    /// incompleto tem `value` vazio, e regravar o mesmo valor apagaria o que se digitou).
+    pub fn on_input_plain(&self, text: String) {
+        if self.inner.with_untracked(|i| *i != text) {
+            self.inner.set(text.clone());
+        }
+        self.state.update_value(|s| s.set_inner_plain(&text));
+        self.emitter.emit(text, false);
     }
 
     /// `onInput` com máscara.
@@ -247,8 +266,11 @@ impl Masking {
 
     /// `watch(modelValue)`: o modelo mudou por fora (ou foi o eco do próprio `Input`).
     pub fn on_model(&self, v: String) {
+        // O modelo mudou por baixo de uma emissão adiada: ela ficou velha. O eco da própria
+        // emissão não passa por aqui com algo pendente (a pausa já a entregou).
+        self.emitter.cancel();
         if self.has_mask() {
-            let own = self.emitted.try_update_value(Option::take).flatten();
+            let own = self.emitter.take_echo();
             if own.as_deref() == Some(v.as_str()) {
                 return;
             }
@@ -257,7 +279,7 @@ impl Masking {
             }
             self.schedule_caret();
         } else {
-            self.emitted.set_value(None);
+            self.emitter.clear_echo();
             self.state.update_value(|s| s.set_inner_plain(&v));
             self.sync_inner();
         }
