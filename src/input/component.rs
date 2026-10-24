@@ -10,6 +10,8 @@ use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, HtmlInputElement, HtmlTextAreaElement};
 
 use super::InputType;
+use super::mask::{FillMask, MaskProps, type_allows_mask};
+use super::masking::{DomEl, Masking, PropsChange};
 use crate::field::FieldProps;
 use crate::{
     Color, Field, FieldAfter, FieldAppend, FieldBefore, FieldDesign, FieldError, FieldHint,
@@ -18,12 +20,20 @@ use crate::{
 
 /// Os dois possíveis controles nativos do `Input` (só um deles é montado).
 #[derive(Clone, Copy)]
-struct Native {
-    input: NodeRef<html::Input>,
-    textarea: NodeRef<html::Textarea>,
+pub(super) struct Native {
+    pub input: NodeRef<html::Input>,
+    pub textarea: NodeRef<html::Textarea>,
 }
 
 impl Native {
+    /// O controle como [`MaskControl`](super::mask::MaskControl), se já montado.
+    pub fn dom(&self) -> Option<DomEl> {
+        match self.input.get_untracked() {
+            Some(el) => Some(DomEl::Input(el)),
+            None => self.textarea.get_untracked().map(DomEl::Textarea),
+        }
+    }
+
     fn element(&self) -> Option<HtmlElement> {
         match self.input.get_untracked() {
             Some(el) => Some(el.unchecked_into::<HtmlElement>()),
@@ -134,7 +144,11 @@ fn generated_id() -> String {
 /// controle). Com `clearable`, um botão no fim limpa o valor, devolve o foco ao controle, chama
 /// `on_clear` (com o valor anterior) e limpa a validação.
 ///
-/// Ainda não: `mask` (R-17), `debounce`, `autogrow`, `counter`, `loading`, `shadow_text` (R-18),
+/// **Máscara** (`mask`, `fill_mask`, `reverse_fill_mask`, `unmasked_value`, só em tipos de texto):
+/// o `value` guarda o texto **mascarado** (como o `v-model` do Quasar) ou, com `unmasked_value`,
+/// só os dados; as `rules` e o `Form` veem o `value`. Ver `docs/ui/forms.md#mascara`.
+///
+/// Ainda não: `mask_tokens` (existe na máscara pura, não na prop), `debounce`, `autogrow`, `counter`, `loading`, `shadow_text` (R-18),
 /// `type="file"`, `input_class`/`input_style`, `model_modifiers`, `display_value`, `on_paste`,
 /// `bg_color`, `rounded`, `square`, `dark`, `reactive_rules`, os slots `label`/`counter`/
 /// `loading`/`control`. `value` é sempre `String` (sem conversão numérica).
@@ -163,6 +177,23 @@ pub fn Input(
     /// Ícone do botão de limpar: a classe **literal** `i-lucide-<nome>` (como em [`Icon`]).
     #[prop(optional)]
     clear_icon: Option<&'static str>,
+    // — Máscara —
+    /// Máscara: `#` dígito, `S` letra, `N` alfanumérico, `A`/`a` letra em caixa alta/baixa,
+    /// `X`/`x` alfanumérico em caixa alta/baixa; `\` escapa. Nomeadas: `date`, `datetime`, `time`,
+    /// `fulltime`, `phone`, `card`. Só em tipos de texto (`Text`, `Password`, `Search`, `Url`,
+    /// `Tel`, `Textarea`).
+    #[prop(optional, into)]
+    mask: MaybeProp<String>,
+    /// Completa a máscara com `_` (`FillMask::Default`) ou com o caractere dado
+    /// (`FillMask::Char('0')`).
+    #[prop(optional, into)]
+    fill_mask: Signal<FillMask>,
+    /// Preenche da direita para a esquerda (valores monetários, `#.##`).
+    #[prop(optional, into)]
+    reverse_fill_mask: Signal<bool>,
+    /// O `value` guarda só os dados, sem os separadores da máscara.
+    #[prop(optional, into)]
+    unmasked_value: Signal<bool>,
     // — Field —
     #[prop(optional, into)] label: Option<String>,
     #[prop(optional)] stack_label: bool,
@@ -234,7 +265,50 @@ pub fn Input(
         },
     );
 
-    let has_value = Signal::derive(move || !value.with(String::is_empty));
+    // Máscara: `inner` é o texto exibido (sem máscara, espelha `value`).
+    let norm = |m: Option<String>| m.filter(|m| !m.is_empty());
+    let masking = Masking::new(
+        value,
+        native,
+        MaskProps {
+            mask: norm(mask.get_untracked()),
+            fill_mask: fill_mask.get_untracked(),
+            reverse_fill_mask: reverse_fill_mask.get_untracked(),
+            unmasked_value: unmasked_value.get_untracked(),
+            text_type: type_allows_mask(type_, false),
+            ..Default::default()
+        },
+    );
+    let inner = masking.inner;
+    let has_value = Signal::derive(move || !inner.with(String::is_empty));
+
+    // O modelo mudou (por fora ou pelo eco do próprio `Input`).
+    Effect::new(move |prev: Option<()>| {
+        let v = value.get();
+        if prev.is_some() {
+            masking.on_model(v);
+        }
+    });
+    // As props de máscara mudaram.
+    Effect::new(
+        move |prev: Option<(Option<String>, FillMask, bool, bool)>| {
+            let cur = (
+                norm(mask.get()),
+                fill_mask.get(),
+                reverse_fill_mask.get(),
+                unmasked_value.get(),
+            );
+            if let Some(p) = &prev {
+                let change = PropsChange {
+                    mask: (p.0 != cur.0).then(|| cur.0.clone()),
+                    fill: (p.1 != cur.1 || p.2 != cur.2).then_some((cur.1, cur.2)),
+                    unmasked: (p.3 != cur.3).then_some(cur.3),
+                };
+                masking.on_props(change);
+            }
+            cur
+        },
+    );
 
     // Só no navegador (Effects não rodam no servidor): foco inicial.
     Effect::new(move |_| {
@@ -297,6 +371,8 @@ pub fn Input(
         maxlength,
         autofocus,
         value,
+        masking,
+        reverse_fill_mask,
         disable,
         readonly,
         native,
@@ -347,6 +423,8 @@ fn NativeControl(
     maxlength: Option<u32>,
     autofocus: bool,
     value: RwSignal<String>,
+    masking: Masking,
+    reverse_fill_mask: Signal<bool>,
     disable: Signal<bool>,
     readonly: Signal<bool>,
     native: Native,
@@ -375,11 +453,60 @@ fn NativeControl(
     let aria_invalid = move || has_error.get().then_some("true");
     let data_autofocus = autofocus.then_some("");
     let tabindex = autofocus.then_some("0");
-    // Só escreve se mudou: um `type="number"` com texto incompleto (`1e`) tem `value` vazio, e
-    // regravar o mesmo valor apagaria o que a pessoa digitou.
-    let set_value = move |new: String| {
-        if value.with_untracked(|v| *v != new) {
-            value.set(new);
+    let inner = masking.inner;
+
+    // Sem máscara: só escreve se mudou (um `type="number"` com texto incompleto (`1e`) tem
+    // `value` vazio, e regravar o mesmo valor apagaria o que se digitou). Com máscara, o texto
+    // passa por `Masking::on_input`, que remascara, posiciona o cursor e escreve o modelo.
+    let handle_input = move |ev: web_sys::Event| {
+        let text = event_target_value(&ev);
+        if masking.has_mask() {
+            let input_type = ev.dyn_ref::<web_sys::InputEvent>().map(|e| e.input_type());
+            masking.on_input(&text, input_type);
+        } else if value.with_untracked(|v| *v != text) {
+            inner.set(text.clone());
+            value.set(text);
+        }
+    };
+    let handle_change = move |ev: web_sys::Event| {
+        let text = event_target_value(&ev);
+        masking.on_composition_end(&text);
+        if let Some(cb) = on_change {
+            cb.run(text);
+        }
+    };
+    let handle_keydown = move |ev: ev::KeyboardEvent| {
+        if let Some(cb) = on_keydown {
+            cb.run(ev.clone());
+        }
+        // O `Input` repassa `on_keydown` primeiro; depois a máscara (que respeita `preventDefault`).
+        if masking.has_mask() && masking.on_keydown(&ev) {
+            ev.prevent_default();
+        }
+    };
+    let handle_click = move |_: ev::MouseEvent| {
+        if masking.has_mask() {
+            masking.on_click();
+        }
+    };
+    let handle_paste = move |_: web_sys::ClipboardEvent| {
+        if masking.has_mask() && !reverse_fill_mask.get_untracked() {
+            masking.on_paste();
+        }
+    };
+    let handle_composition_start =
+        move |_: web_sys::CompositionEvent| masking.on_composition_start();
+    let handle_composition_end = move |ev: web_sys::CompositionEvent| {
+        masking.on_composition_end(&event_target_value(&ev));
+    };
+    let handle_focus = move |ev: ev::FocusEvent| {
+        if let Some(cb) = on_focus {
+            cb.run(ev);
+        }
+    };
+    let handle_blur = move |ev: ev::FocusEvent| {
+        if let Some(cb) = on_blur {
+            cb.run(ev);
         }
     };
 
@@ -399,30 +526,18 @@ fn NativeControl(
                 readonly=move || readonly.get()
                 aria-invalid=aria_invalid
                 aria-describedby=described_by
-                prop:value=move || value.get()
-                on:input=move |ev| set_value(event_target_value(&ev))
-                on:change=move |ev| {
-                    if let Some(cb) = on_change {
-                        cb.run(event_target_value(&ev));
-                    }
-                }
-                on:focus=move |ev| {
-                    if let Some(cb) = on_focus {
-                        cb.run(ev);
-                    }
-                }
-                on:blur=move |ev| {
-                    if let Some(cb) = on_blur {
-                        cb.run(ev);
-                    }
-                }
-                on:keydown=move |ev| {
-                    if let Some(cb) = on_keydown {
-                        cb.run(ev);
-                    }
-                }
+                prop:value=move || inner.get()
+                on:input=handle_input
+                on:change=handle_change
+                on:focus=handle_focus
+                on:blur=handle_blur
+                on:keydown=handle_keydown
+                on:click=handle_click
+                on:paste=handle_paste
+                on:compositionstart=handle_composition_start
+                on:compositionend=handle_composition_end
             >
-                {value.get_untracked()}
+                {inner.get_untracked()}
             </textarea>
         }
         .into_any()
@@ -442,29 +557,17 @@ fn NativeControl(
                 readonly=move || readonly.get()
                 aria-invalid=aria_invalid
                 aria-describedby=described_by
-                value=value.get_untracked()
-                prop:value=move || value.get()
-                on:input=move |ev| set_value(event_target_value(&ev))
-                on:change=move |ev| {
-                    if let Some(cb) = on_change {
-                        cb.run(event_target_value(&ev));
-                    }
-                }
-                on:focus=move |ev| {
-                    if let Some(cb) = on_focus {
-                        cb.run(ev);
-                    }
-                }
-                on:blur=move |ev| {
-                    if let Some(cb) = on_blur {
-                        cb.run(ev);
-                    }
-                }
-                on:keydown=move |ev| {
-                    if let Some(cb) = on_keydown {
-                        cb.run(ev);
-                    }
-                }
+                value=inner.get_untracked()
+                prop:value=move || inner.get()
+                on:input=handle_input
+                on:change=handle_change
+                on:focus=handle_focus
+                on:blur=handle_blur
+                on:keydown=handle_keydown
+                on:click=handle_click
+                on:paste=handle_paste
+                on:compositionstart=handle_composition_start
+                on:compositionend=handle_composition_end
             />
         }
         .into_any()

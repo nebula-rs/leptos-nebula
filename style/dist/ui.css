@@ -540,9 +540,11 @@ h1, h2, h3, h4, h5, h6 {
 /* layer: default */
 .static{position:static;}
 .shrink{flex-shrink:1;}
+.transform{transform:translateX(var(--un-translate-x)) translateY(var(--un-translate-y)) translateZ(var(--un-translate-z)) rotate(var(--un-rotate)) rotateX(var(--un-rotate-x)) rotateY(var(--un-rotate-y)) rotateZ(var(--un-rotate-z)) skewX(var(--un-skew-x)) skewY(var(--un-skew-y)) scaleX(var(--un-scale-x)) scaleY(var(--un-scale-y)) scaleZ(var(--un-scale-z));}
 .b,
 .border{border-width:1px;}
 .rounded{border-radius:0.25rem;}
+.p\.2{padding:0.05rem;}
 .px{padding-left:1rem;padding-right:1rem;}
 .tab{-moz-tab-size:4;-o-tab-size:4;tab-size:4;}
 .outline{outline-style:solid;}

@@ -4,8 +4,11 @@
 //! host); o componente, o `InputHandle` e a geração do `id` estão em [`component`].
 
 mod component;
+mod mask;
+mod masking;
 
 pub use component::{Input, InputHandle};
+pub use mask::FillMask;
 
 /// Tipo do controle nativo. `Textarea` troca o `<input>` por um `<textarea>`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]

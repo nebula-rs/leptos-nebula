@@ -28,6 +28,6 @@ pub use form::{
     FocusFn, Form, FormChildId, FormChildOptions, FormHandle, ResetValidationFn, ValidateFn,
     use_form_child,
 };
-pub use input::{Input, InputHandle, InputType};
+pub use input::{FillMask, Input, InputHandle, InputType};
 pub use styles::{CSS, UiStyles};
 pub use theme::{Mode, Theme, ThemeStore, provide_theme, use_theme};
