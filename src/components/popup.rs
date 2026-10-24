@@ -360,6 +360,11 @@ impl Overlay {
         found
     }
 
+    /// Define a âncora direto (quando ela não é o pai do marcador nem tem seletor próprio).
+    pub(crate) fn set_anchor(&self, el: web_sys::Element) {
+        self.anchor.set_value(Some(el));
+    }
+
     /// Âncora para abrir: a guardada, ou (com `target`) uma nova busca pelo seletor.
     pub(crate) fn anchor_for_open(&self, target: Option<&str>) -> Option<web_sys::Element> {
         if let Some(a) = self.anchor().filter(|a| a.is_connected()) {

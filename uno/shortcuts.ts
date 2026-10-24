@@ -251,10 +251,35 @@ const input: Shortcuts = {
   ].join(' '),
 }
 
+// ── Select ────────────────────────────────────────────────────────────────
+// O campo é um `<input readonly>` (junto de `lx-field-native`); a lista usa o popup `lx-menu`.
+// As opções reaproveitam os tokens de `Item` (`item-hover-bg`, `item-active-*`). Estados da opção
+// (ativa × selecionada × desabilitada) em shortcuts completos; a base só tem layout.
+const selectOutline = `${p('outline', `2px solid ${v('color-primary')}`)} ${p('outline-offset', '-2px')}`
+const select: Shortcuts = {
+  'lx-select-input': [
+    'cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap',
+    p('caret-color', 'transparent'),
+  ].join(' '),
+  'lx-select-arrow-closed': `flex flex-none items-center ${color('on-surface-muted')} ${p('transition', 'transform 150ms')} motion-reduce:${p('transition', 'none')}`,
+  'lx-select-arrow-open': `flex flex-none items-center ${color('on-surface-muted')} ${p('transition', 'transform 150ms')} ${p('transform', 'rotate(180deg)')} motion-reduce:${p('transition', 'none')}`,
+  'lx-select-list': `flex flex-col box-border m-0 list-none py-[${sp('xs')}] px-0`,
+  'lx-select-option-label': 'flex-1 min-w-0',
+  'lx-select-option-check': 'flex flex-none items-center',
+  'lx-select-empty': `px-[${v('item-padding-x')}] py-[${sp('md')}] ${color('on-surface-muted')}`,
+  'lx-select-option-base': `flex flex-row items-center box-border gap-[${sp('md')}] min-h-[2.5rem] px-[${v('item-padding-x')}] py-[${sp('xs')}] list-none`,
+  'lx-select-option-idle': `lx-select-option-base cursor-pointer ${color('on-surface')}`,
+  'lx-select-option-active': `lx-select-option-base cursor-pointer ${p('background', v('item-hover-bg'))} ${color('on-surface')} ${selectOutline}`,
+  'lx-select-option-selected': `lx-select-option-base cursor-pointer ${p('background', v('item-active-bg'))} ${p('color', v('item-active-color'))}`,
+  'lx-select-option-selected-active': `lx-select-option-base cursor-pointer ${p('background', v('item-active-bg'))} ${p('color', v('item-active-color'))} ${selectOutline}`,
+  'lx-select-option-disabled': `lx-select-option-base cursor-not-allowed ${color('on-surface-muted')} ${p('opacity', '0.6')}`,
+}
+
 export const shortcuts: Shortcuts = {
   ...tones,
   ...field,
   ...input,
+  ...select,
 
   // ── Icon ──────────────────────────────────────────────────────────────────
   'lx-icon': 'inline-block shrink-0 align-middle',

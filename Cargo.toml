@@ -19,7 +19,7 @@ leptos        = { workspace = true }
 leptos_meta   = { workspace = true }
 wasm-bindgen  = { workspace = true }
 js-sys        = { workspace = true }
-web-sys       = { workspace = true, features = ["Window", "Document", "Element", "Storage", "MediaQueryList", "MediaQueryListEvent", "HtmlFormElement", "HtmlElement", "NodeList", "SubmitEvent", "Event", "FocusOptions", "Node", "FocusEvent", "MouseEvent", "KeyboardEvent", "HtmlInputElement", "HtmlTextAreaElement", "InputEvent", "ClipboardEvent", "CompositionEvent", "CssStyleDeclaration", "Navigator", "HtmlDialogElement", "AnimationEvent", "EventTarget", "AddEventListenerOptions", "DomRect", "ResizeObserver"] }
+web-sys       = { workspace = true, features = ["Window", "Document", "Element", "Storage", "MediaQueryList", "MediaQueryListEvent", "HtmlFormElement", "HtmlElement", "NodeList", "SubmitEvent", "Event", "FocusOptions", "Node", "FocusEvent", "MouseEvent", "KeyboardEvent", "HtmlInputElement", "HtmlTextAreaElement", "InputEvent", "ClipboardEvent", "CompositionEvent", "CssStyleDeclaration", "Navigator", "HtmlDialogElement", "AnimationEvent", "EventTarget", "AddEventListenerOptions", "DomRect", "ResizeObserver", "ScrollIntoViewOptions", "ScrollLogicalPosition"] }
 
 [dev-dependencies]
 futures = { workspace = true, features = ["executor"] }

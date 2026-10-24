@@ -11,6 +11,7 @@ mod color;
 mod field;
 mod form;
 mod input;
+mod select;
 mod styles;
 mod theme;
 mod util;
@@ -31,5 +32,6 @@ pub use form::{
 };
 pub use input::{FillMask, Input, InputHandle, InputType};
 pub use position::{Horizontal, ParsePositionError, Position, Vertical};
+pub use select::{Select, SelectMultiple, SelectOption};
 pub use styles::{CSS, UiStyles};
 pub use theme::{Mode, Theme, ThemeStore, provide_theme, use_theme};

@@ -12,7 +12,7 @@ mod layout;
 mod list;
 mod markup_table;
 mod menu;
-mod popup;
+pub(crate) mod popup;
 mod separator;
 mod spinner;
 mod tabs;
