@@ -16,6 +16,7 @@ mod theme;
 mod util;
 
 pub mod components;
+pub mod position;
 
 pub use color::{Align, Color};
 pub use components::*;
@@ -29,5 +30,6 @@ pub use form::{
     use_form_child,
 };
 pub use input::{FillMask, Input, InputHandle, InputType};
+pub use position::{Horizontal, ParsePositionError, Position, Vertical};
 pub use styles::{CSS, UiStyles};
 pub use theme::{Mode, Theme, ThemeStore, provide_theme, use_theme};

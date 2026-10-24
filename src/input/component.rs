@@ -2,7 +2,6 @@
 //! [`Field`].
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use leptos::{ev, html, prelude::*};
@@ -14,6 +13,7 @@ use super::autogrow::{Autogrow, needs_js};
 use super::mask::{FillMask, MaskProps, type_allows_mask};
 use super::masking::{DomEl, Masking, PropsChange};
 use crate::field::FieldProps;
+use crate::util::next_id;
 use crate::{
     Color, Field, FieldAfter, FieldAppend, FieldBefore, FieldCounter, FieldDesign, FieldError,
     FieldHint, FieldLoading, FieldPrepend, Icon, LazyRules, Rule, ValidationOptions,
@@ -113,22 +113,9 @@ impl InputHandle {
     }
 }
 
-/// Contador só para o navegador sem SSR (`csr`), onde não há `SharedContext`.
-static CSR_IDS: AtomicUsize = AtomicUsize::new(0);
-
-/// `id` gerado para o controle quando o app não passa `id`.
-///
-/// Seguro para hidratação: com SSR/SSG o número vem do `SharedContext` do Leptos
-/// (`next_id`), uma sequência por requisição/página que o servidor e o cliente percorrem na
-/// mesma ordem (a mesma que o Leptos usa para os `Resource`); um contador global não serviria,
-/// pois o SSG renderiza várias páginas no mesmo processo. Sem `SharedContext` (`csr` puro) usa
-/// um contador atômico, que não precisa casar com nada.
+/// `id` gerado para o controle quando o app não passa `id` (ver [`next_id`]).
 fn generated_id() -> String {
-    let n = match Owner::current_shared_context() {
-        Some(ctx) => ctx.next_id().into_inner(),
-        None => CSR_IDS.fetch_add(1, Ordering::Relaxed),
-    };
-    format!("lx-input-{n}")
+    next_id("lx-input")
 }
 
 /// Campo de texto: um [`Field`] com um `<input>` (ou `<textarea>`) dentro. ≈ `QInput`.

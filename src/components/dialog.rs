@@ -12,7 +12,7 @@ use leptos::leptos_dom::helpers::{TimeoutHandle, set_timeout_with_handle};
 use leptos::{ev, html, prelude::*};
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::util::cls;
+use crate::util::{cls, parse_duration_ms};
 
 /// Lado em que o [`Dialog`] encosta. `Standard` (padrão) centraliza.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
@@ -62,24 +62,6 @@ fn backdrop_action(persistent: bool, no_backdrop_dismiss: bool, maximized: bool)
     } else {
         Dismiss::Hide
     }
-}
-
-/// Lê um valor de `transition-duration` (lista separada por vírgulas, em `s` ou `ms`) e devolve
-/// a maior duração, em ms. Valor ilegível conta como 0.
-fn parse_duration_ms(css: &str) -> u32 {
-    css.split(',')
-        .filter_map(|part| {
-            let part = part.trim();
-            if let Some(ms) = part.strip_suffix("ms") {
-                ms.trim().parse::<f64>().ok()
-            } else if let Some(s) = part.strip_suffix('s') {
-                s.trim().parse::<f64>().ok().map(|v| v * 1000.0)
-            } else {
-                None
-            }
-        })
-        .fold(0.0_f64, f64::max)
-        .round() as u32
 }
 
 /// O `close` nativo veio logo depois de um `cancel` recusado? O Chrome fecha o diálogo mesmo
@@ -581,16 +563,6 @@ mod tests {
         assert_eq!(backdrop_action(false, false, false), Dismiss::Hide);
         assert_eq!(backdrop_action(true, false, false), Dismiss::Shake);
         assert_eq!(backdrop_action(false, true, false), Dismiss::Shake);
-    }
-
-    #[test]
-    fn parses_the_longest_transition_duration() {
-        assert_eq!(parse_duration_ms("0.25s"), 250);
-        assert_eq!(parse_duration_ms("250ms"), 250);
-        assert_eq!(parse_duration_ms("0.15s, 0.3s"), 300);
-        assert_eq!(parse_duration_ms("0s"), 0);
-        assert_eq!(parse_duration_ms(""), 0);
-        assert_eq!(parse_duration_ms("auto"), 0);
     }
 
     #[test]

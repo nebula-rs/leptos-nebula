@@ -1,5 +1,6 @@
 use leptos::{ev, prelude::*};
 
+use super::menu::MenuCtx;
 use crate::util::cls;
 
 #[derive(Clone, Copy)]
@@ -8,6 +9,9 @@ struct ListCtx {
 }
 
 /// Lista. ≈ `QList`. Os [`Item`]s herdam `dense`.
+///
+/// Dentro de um [`Menu`](super::Menu) a lista é o conteúdo do menu: ela deixa de ser `role="list"`
+/// (o `Menu` passa a ser o `role="menu"`) e os `Item`s clicáveis viram `menuitem`s.
 ///
 /// Ainda não: `dark`, `tag`.
 #[component]
@@ -19,13 +23,19 @@ pub fn List(
     children: Children,
 ) -> impl IntoView {
     provide_context(ListCtx { dense });
+    let in_menu = use_context::<MenuCtx>();
+    if let Some(menu) = in_menu {
+        menu.is_menu.set(true);
+    }
     let class = cls([
         "lx-list",
         if bordered { "lx-list-bordered" } else { "" },
         if separator { "lx-list-separator" } else { "" },
         if padding { "lx-list-padding" } else { "" },
     ]);
-    view! { <div class=class role="list">{children()}</div> }
+    // `none`: o papel `menu` está no popup do `Menu`; esta caixa só repassa os `menuitem`s
+    let role = if in_menu.is_some() { "none" } else { "list" };
+    view! { <div class=class role=role>{children()}</div> }
 }
 
 /// Item de lista. ≈ `QItem`.
@@ -48,6 +58,12 @@ pub fn Item(
 ) -> impl IntoView {
     let dense = dense || use_context::<ListCtx>().is_some_and(|c| c.dense);
     let interactive = clickable || href.is_some() || on_click.is_some();
+    // Num `Menu`, o item clicável é um `menuitem` que o menu alcança com as setas (`tabindex=-1`).
+    let (role, tabindex) = if interactive && use_context::<MenuCtx>().is_some() {
+        (Some("menuitem"), Some("-1"))
+    } else {
+        (None, None)
+    };
     let size = if dense {
         "lx-item-size-dense"
     } else {
@@ -71,13 +87,13 @@ pub fn Item(
     };
     match href {
         Some(href) => view! {
-            <a class=class style=style href=href on:click=on_click>
+            <a class=class style=style href=href role=role tabindex=tabindex on:click=on_click>
                 {children()}
             </a>
         }
         .into_any(),
         None => view! {
-            <div class=class style=style on:click=on_click>
+            <div class=class style=style role=role tabindex=tabindex on:click=on_click>
                 {children()}
             </div>
         }

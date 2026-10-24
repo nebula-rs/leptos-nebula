@@ -409,6 +409,44 @@ export const shortcuts: Shortcuts = {
   // Bloqueio de rolagem do <html> (a classe é posta pelo componente, não vem de markup)
   'lx-scroll-lock': `overflow-hidden ${p('scrollbar-gutter', 'stable')}`,
 
+  // ── Menu e Tooltip ────────────────────────────────────────────────────────
+  // Popups `popover="manual"` (camada superior); `top`/`left` vêm do motor de posição, em estilo
+  // inline. NÃO definir `display`: o UA esconde `[popover]:not(:popover-open)` com `display:none`.
+  // Estado (entrada/aberto) em shortcuts completos e exclusivos.
+  'lx-menu': [
+    'fixed m-0 p-0 box-border w-max inset-auto overflow-x-hidden overflow-y-auto pointer-events-auto',
+    p('outline', '0'),
+    p('background', v('menu-bg')),
+    p('color', v('menu-color')),
+    p('border', v('menu-border')),
+    p('border-radius', v('menu-radius')),
+    p('box-shadow', v('menu-shadow')),
+    p('max-width', v('menu-max-width')),
+    p('max-height', v('menu-max-height')),
+    p('transform-origin', 'top'),
+    fs('sm'),
+    p(
+      'transition',
+      `opacity ${v('menu-duration')} ${v('menu-easing')}, transform ${v('menu-duration')} ${v('menu-easing')}`,
+    ),
+  ].join(' '),
+  'lx-menu-enter': `${p('opacity', '0')} ${p('transform', `scale(${v('menu-scale-from')})`)} motion-reduce:${p('transform', 'none')}`,
+  'lx-menu-open': `${p('opacity', '1')} ${p('transform', 'none')}`,
+  'lx-tooltip': [
+    'fixed m-0 box-border w-max inset-auto overflow-hidden border-0 pointer-events-none',
+    p('background', v('tooltip-bg')),
+    p('color', v('tooltip-color')),
+    p('border-radius', v('tooltip-radius')),
+    p('padding', v('tooltip-padding')),
+    p('font-size', v('tooltip-font-size')),
+    p('box-shadow', v('tooltip-shadow')),
+    p('max-width', v('tooltip-max-width')),
+    p('max-height', v('tooltip-max-height')),
+    p('transition', `opacity ${v('tooltip-duration')} ${v('tooltip-easing')}`),
+  ].join(' '),
+  'lx-tooltip-enter': p('opacity', '0'),
+  'lx-tooltip-open': p('opacity', '1'),
+
   // ── Card ──────────────────────────────────────────────────────────────────
   'lx-card': [
     'block relative box-border overflow-hidden',
@@ -451,7 +489,7 @@ export const shortcuts: Shortcuts = {
   // mesmo do item normal e do `ItemLabel header` (token único).
   'lx-item-size-normal': `min-h-[3rem] px-[${v('item-padding-x')}] py-[${sp('sm')}]`,
   'lx-item-size-dense': `min-h-[2.25rem] px-[${v('item-padding-x')}] py-[${sp('xs')}]`,
-  'lx-item-clickable': `cursor-pointer ${p('transition', 'background-color 150ms')} hover:${p('background', v('item-hover-bg'))}`,
+  'lx-item-clickable': `cursor-pointer ${p('transition', 'background-color 150ms')} hover:${p('background', v('item-hover-bg'))} focus-visible:${p('outline-offset', '-2px')}`,
   'lx-item-active': `cursor-pointer ${p('background', v('item-active-bg'))} ${p('color', v('item-active-color'))}`,
   'lx-item-section-main': 'flex flex-col justify-center flex-1 min-w-0',
   'lx-item-section-avatar': 'flex flex-col justify-center flex-none min-w-[1.5rem] items-start',

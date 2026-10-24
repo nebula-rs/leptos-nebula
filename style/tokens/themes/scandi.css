@@ -166,6 +166,28 @@
   --lx-dialog-scale-from: 0.92;
   --lx-dialog-slide-distance: 2.5rem;
   --lx-dialog-shake-duration: 170ms;
+  /* Menu e Tooltip (popups posicionados na camada superior pela Popover API) */
+  --lx-shadow-popup: 0 8px 24px rgb(28 31 35 / 0.14);
+  --lx-menu-bg: var(--lx-color-surface-raised);
+  --lx-menu-color: var(--lx-color-on-surface);
+  --lx-menu-radius: var(--lx-radius-md);
+  --lx-menu-border: var(--lx-border-width) solid var(--lx-color-border);
+  --lx-menu-shadow: var(--lx-shadow-popup);
+  --lx-menu-max-width: 95vw;
+  --lx-menu-max-height: 65vh;
+  --lx-menu-duration: var(--lx-duration-fast);
+  --lx-menu-easing: var(--lx-easing);
+  --lx-menu-scale-from: 0.96;
+  --lx-tooltip-bg: var(--lx-p-ink-800);
+  --lx-tooltip-color: var(--lx-p-linen-50);
+  --lx-tooltip-radius: var(--lx-radius-sm);
+  --lx-tooltip-padding: 0.375rem 0.625rem;
+  --lx-tooltip-font-size: var(--lx-font-size-xs);
+  --lx-tooltip-max-width: min(95vw, 20rem);
+  --lx-tooltip-max-height: 65vh;
+  --lx-tooltip-shadow: none;
+  --lx-tooltip-duration: var(--lx-duration-fast);
+  --lx-tooltip-easing: var(--lx-easing);
   --lx-badge-radius: var(--lx-radius-pill);
   --lx-banner-radius: var(--lx-radius-md);
   --lx-card-radius: var(--lx-radius-lg);
@@ -247,6 +269,9 @@
   --lx-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --lx-shadow-md: 0 6px 24px rgb(0 0 0 / 0.35);
   --lx-drawer-shadow: 0 24px 64px rgb(0 0 0 / 0.5);
+  --lx-shadow-popup: 0 8px 24px rgb(0 0 0 / 0.5);
+  --lx-tooltip-bg: var(--lx-p-linen-200);
+  --lx-tooltip-color: var(--lx-p-ink-900);
   --lx-code-bg: var(--lx-p-ink-950);
   --lx-code-text: #ebe7e1;
   --lx-code-comment: var(--lx-p-ink-400);
