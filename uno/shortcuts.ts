@@ -250,6 +250,42 @@ export const shortcuts: Shortcuts = {
   'lx-banner-content': 'flex-1 min-w-0',
   'lx-banner-actions': `flex shrink-0 items-center gap-[${sp('sm')}] self-end`,
 
+  // ── Spinner ───────────────────────────────────────────────────────────────
+  // Sem cor própria: herda `currentColor` (cabe no append do Field e dentro do Btn).
+  'lx-spinner': `inline-block align-middle shrink-0`,
+  'lx-spinner-tone': p('color', v('tone')),
+  'lx-spinner-path': [
+    p('stroke-dasharray', '1, 200'),
+    p('stroke-dashoffset', '0'),
+    p('transform-origin', '25px 25px'),
+    p(
+      'animation',
+      `lx-spinner-rotate ${v('spinner-rotate-duration')} linear infinite, lx-spinner-dash ${v('spinner-dash-duration')} ease-in-out infinite`,
+    ),
+    // reduced-motion: mais lento, não parado
+    `motion-reduce:${p('animation-duration', `${v('spinner-rotate-duration-reduced')}, ${v('spinner-dash-duration-reduced')}`)}`,
+  ].join(' '),
+
+  // ── EmptyState ────────────────────────────────────────────────────────────
+  'lx-empty-state': [
+    'flex flex-col items-center justify-center text-center box-border',
+    `gap-[${sp('sm')}]`,
+    p('padding', v('empty-state-padding')),
+    fs('sm'),
+    p('color', v('empty-state-hint')),
+  ].join(' '),
+  'lx-empty-state-icon': [
+    p('font-size', v('empty-state-icon-size')),
+    p('color', v('empty-state-icon')),
+  ].join(' '),
+  'lx-empty-state-title': [
+    fs('md'),
+    p('font-weight', v('empty-state-title-weight')),
+    p('color', v('empty-state-title')),
+  ].join(' '),
+  'lx-empty-state-hint': `${p('color', v('empty-state-hint'))} max-w-[${v('empty-state-hint-max-width')}]`,
+  'lx-empty-state-actions': `flex flex-wrap items-center justify-center gap-[${sp('sm')}] mt-[${sp('sm')}]`,
+
   // ── Card ──────────────────────────────────────────────────────────────────
   'lx-card': [
     'block relative box-border overflow-hidden',

@@ -132,6 +132,19 @@
   --lx-field-disabled-opacity: var(--lx-state-disabled-opacity);
   --lx-field-hint-color: var(--lx-color-on-surface-muted);
   --lx-field-bottom-height: 1.25rem;
+  /* Spinner (rotação lenta, não parada, com prefers-reduced-motion) */
+  --lx-spinner-rotate-duration: 2s;
+  --lx-spinner-dash-duration: 1.5s;
+  --lx-spinner-rotate-duration-reduced: 6s;
+  --lx-spinner-dash-duration-reduced: 4.5s;
+  /* EmptyState */
+  --lx-empty-state-padding: var(--lx-space-xl) var(--lx-space-md);
+  --lx-empty-state-icon-size: 2rem;
+  --lx-empty-state-icon: var(--lx-color-on-surface-muted);
+  --lx-empty-state-title: var(--lx-color-on-surface);
+  --lx-empty-state-title-weight: var(--lx-font-weight-strong);
+  --lx-empty-state-hint: var(--lx-color-on-surface-muted);
+  --lx-empty-state-hint-max-width: 28rem;
   --lx-badge-radius: var(--lx-radius-pill);
   --lx-banner-radius: var(--lx-radius-md);
   --lx-card-radius: var(--lx-radius-lg);

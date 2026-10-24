@@ -25,3 +25,18 @@ h1, h2, h3, h4, h5, h6 {
   outline: 2px solid var(--lx-color-focus);
   outline-offset: 2px;
 }
+
+/* Spinner (animação do circular; durações e reduced-motion via tokens/shortcut `lx-spinner-path`) */
+@keyframes lx-spinner-rotate {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(90deg); }
+  50% { transform: rotate(180deg); }
+  75% { transform: rotate(270deg); }
+  100% { transform: rotate(359deg); }
+}
+
+@keyframes lx-spinner-dash {
+  0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35px; }
+  100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
+}
