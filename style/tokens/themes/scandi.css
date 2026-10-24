@@ -106,6 +106,32 @@
   --lx-btn-transform: none;
   --lx-btn-tracking: 0;
   --lx-btn-shadow: none;
+  /* Field: label (ADR-0010). Scandi: fixo acima da caixa — repouso = flutuando, sem transição. */
+  --lx-field-label-space: 1.5rem;
+  --lx-field-label-rest-transform: none;
+  --lx-field-label-float-transform: none;
+  --lx-field-label-float-bg: transparent;
+  --lx-field-label-transition: none;
+  --lx-field-label-pointer-events: auto;
+  --lx-field-label-color: var(--lx-color-on-surface-muted);
+  --lx-field-label-font-size: var(--lx-font-size-sm);
+  --lx-field-label-weight: var(--lx-font-weight-strong);
+  --lx-field-label-line-height: 1.25rem;
+  --lx-field-placeholder-rest-opacity: 1;
+  /* Field: caixa e designs */
+  --lx-field-height: var(--lx-control-height);
+  --lx-field-height-dense: var(--lx-control-height-sm);
+  --lx-field-padding-x: var(--lx-space-md);
+  --lx-field-padding-x-dense: var(--lx-space-sm);
+  --lx-field-radius: var(--lx-radius-md);
+  --lx-field-bg: var(--lx-color-surface);
+  --lx-field-border: var(--lx-color-border-strong);
+  --lx-field-filled-bg: var(--lx-color-surface-muted);
+  --lx-field-filled-radius: var(--lx-radius-md) var(--lx-radius-md) 0 0;
+  --lx-field-focus-ring-width: 1px;
+  --lx-field-disabled-opacity: var(--lx-state-disabled-opacity);
+  --lx-field-hint-color: var(--lx-color-on-surface-muted);
+  --lx-field-bottom-height: 1.25rem;
   --lx-badge-radius: var(--lx-radius-pill);
   --lx-banner-radius: var(--lx-radius-md);
   --lx-card-radius: var(--lx-radius-lg);

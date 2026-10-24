@@ -54,8 +54,109 @@ const mtCells = (px: string, py: string) =>
 const mtHoriz = ['th', 'td'].map((c) => `[&_${c}]:${border('bottom')}`).join(' ')
 const mtVert = ['th+th', 'td+td'].map((c) => `[&_${c}]:${border('left')}`).join(' ')
 
+// ── Field ─────────────────────────────────────────────────────────────────
+// Design × foco são shortcuts completos na caixa do controle; o label tem dois estados
+// exclusivos (repouso × flutuando) cujas posições vêm de tokens do tema (ADR-0010).
+const fieldRing = (token: string) => p('box-shadow', `0 0 0 ${v('field-focus-ring-width')} ${token}`)
+const fieldUnderline = (token: string) => p('box-shadow', `0 1px 0 0 ${token}`)
+const fieldBoxVisual = (design: string, focused: boolean): string => {
+  const w = v('border-width')
+  const tone = v('tone')
+  const idleBorder = v('field-border')
+  switch (design) {
+    case 'outlined':
+      return [
+        p('background', v('field-bg')),
+        p('border-radius', v('field-radius')),
+        p('border-style', 'solid'),
+        p('border-width', w),
+        p('border-color', focused ? tone : idleBorder),
+        focused ? fieldRing(tone) : '',
+      ].join(' ')
+    case 'filled':
+      return [
+        p('background', v('field-filled-bg')),
+        p('border-radius', v('field-filled-radius')),
+        p('border-style', 'solid'),
+        p('border-width', w),
+        p('border-color', `transparent transparent ${focused ? tone : idleBorder} transparent`),
+        focused ? fieldUnderline(tone) : '',
+      ].join(' ')
+    default:
+      return [
+        'bg-transparent',
+        p('border-radius', v('field-radius')),
+        p('border-style', 'solid'),
+        p('border-width', w),
+        'border-transparent',
+        focused ? fieldUnderline(tone) : '',
+      ].join(' ')
+  }
+}
+const fieldBoxes: Shortcuts = Object.fromEntries(
+  ['outlined', 'filled', 'borderless'].flatMap((d) => [
+    [`lx-field-${d}-idle`, fieldBoxVisual(d, false)],
+    [`lx-field-${d}-focused`, fieldBoxVisual(d, true)],
+  ]),
+)
+const fieldLabel = (transform: string, bgToken: string | null) =>
+  [
+    'absolute left-0 top-0 z-[1] box-border max-w-full overflow-hidden text-ellipsis whitespace-nowrap',
+    p('transform-origin', 'left top'),
+    p('transform', v(transform)),
+    bgToken ? p('background', v(bgToken)) : 'bg-transparent',
+    p('pointer-events', v('field-label-pointer-events')),
+    p('color', v('field-label-color')),
+    p('font-size', v('field-label-font-size')),
+    p('font-weight', v('field-label-weight')),
+    p('line-height', v('field-label-line-height')),
+    p('transition', v('field-label-transition')),
+  ].join(' ')
+
+const field: Shortcuts = {
+  'lx-field': [
+    'flex flex-row items-start box-border w-full text-left',
+    `gap-[${sp('sm')}]`,
+    fs('sm'),
+    color('on-surface'),
+    p('font-family', 'inherit'),
+  ].join(' '),
+  'lx-field-size-normal': `${p('--lx-field-h', v('field-height'))} ${p('--lx-field-px', v('field-padding-x'))}`,
+  'lx-field-size-dense': `${p('--lx-field-h', v('field-height-dense'))} ${p('--lx-field-px', v('field-padding-x-dense'))}`,
+  'lx-field-labeled': p('--lx-field-top', v('field-label-space')),
+  'lx-field-plain': p('--lx-field-top', '0px'),
+  'lx-field-editable': 'cursor-text',
+  'lx-field-readonly': 'cursor-default',
+  'lx-field-disabled': `cursor-not-allowed ${p('opacity', v('field-disabled-opacity'))}`,
+  'lx-field-placeholder-rest': p('--lx-field-placeholder-opacity', v('field-placeholder-rest-opacity')),
+  'lx-field-placeholder-shown': p('--lx-field-placeholder-opacity', '1'),
+  'lx-field-inner': 'relative flex flex-col flex-1 min-w-0 box-border pt-[var(--lx-field-top)]',
+  'lx-field-side': `flex flex-none items-center self-start box-border mt-[var(--lx-field-top)] min-h-[var(--lx-field-h)] ${color('on-surface-muted')}`,
+  'lx-field-box': `relative flex flex-row items-center box-border min-h-[var(--lx-field-h)] px-[var(--lx-field-px)] gap-[${sp('sm')}]`,
+  ...fieldBoxes,
+  'lx-field-control-container': 'relative flex flex-1 flex-row items-center min-w-0 self-stretch',
+  'lx-field-marginal': `flex flex-none flex-row items-center gap-[${sp('xs')}] ${color('on-surface-muted')}`,
+  'lx-field-prefix': `flex items-center shrink-0 pr-[${sp('xs')}] ${color('on-surface-muted')}`,
+  'lx-field-suffix': `flex items-center shrink-0 pl-[${sp('xs')}] ${color('on-surface-muted')}`,
+  'lx-field-native': [
+    'block w-full min-w-0 m-0 p-0 border-0 bg-transparent outline-none',
+    p('font', 'inherit'),
+    p('color', 'inherit'),
+    `placeholder:${p('opacity', 'var(--lx-field-placeholder-opacity)')}`,
+    `placeholder:${color('on-surface-muted')}`,
+    'disabled:cursor-not-allowed',
+  ].join(' '),
+  'lx-field-label-rest': fieldLabel('field-label-rest-transform', null),
+  'lx-field-label-float': fieldLabel('field-label-float-transform', 'field-label-float-bg'),
+  'lx-field-bottom': `flex items-start box-border pt-[${sp('xs')}] ${fs('xs')} ${color('on-surface-muted')}`,
+  'lx-field-bottom-reserved': 'min-h-[var(--lx-field-bottom-height)]',
+  'lx-field-bottom-free': 'min-h-0',
+  'lx-field-hint': p('color', v('field-hint-color')),
+}
+
 export const shortcuts: Shortcuts = {
   ...tones,
+  ...field,
 
   // ── Icon ──────────────────────────────────────────────────────────────────
   'lx-icon': 'inline-block shrink-0 align-middle',

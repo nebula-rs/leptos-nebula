@@ -8,6 +8,7 @@
 //! lib não fixa `csr`/`hydrate`/`ssr` — quem decide é o app (ADR-0007).
 
 mod color;
+mod field;
 mod form;
 mod styles;
 mod theme;
@@ -17,6 +18,10 @@ pub mod components;
 
 pub use color::{Align, Color};
 pub use components::*;
+pub use field::{
+    Field, FieldAfter, FieldAppend, FieldBefore, FieldContext, FieldDesign, FieldHint,
+    FieldPrepend, use_field_context,
+};
 pub use form::{
     FocusFn, Form, FormChildId, FormChildOptions, FormHandle, ResetValidationFn, ValidateFn,
     use_form_child,
