@@ -11,6 +11,7 @@ mod color;
 mod field;
 mod form;
 mod input;
+mod options;
 mod select;
 mod styles;
 mod table;
@@ -32,8 +33,9 @@ pub use form::{
     use_form_child,
 };
 pub use input::{FillMask, Input, InputHandle, InputType};
+pub use options::{HasKey, HasLabel, NoKey, NoLabel, ObjectOptions, Opt, Options};
 pub use position::{Horizontal, ParsePositionError, Position, Vertical};
-pub use select::{Select, SelectMultiple, SelectOption};
+pub use select::{Select, SelectMultiple};
 pub use styles::{CSS, UiStyles};
 pub use table::{Table, TableColumn, TablePagination, TablePaginationLabels};
 pub use theme::{Mode, Theme, ThemeStore, provide_theme, use_theme};

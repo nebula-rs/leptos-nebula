@@ -16,4 +16,5 @@ pub use component::{
 };
 pub use state::FieldDesign;
 pub use validate::{LazyRules, Rule, RuleResult};
+pub(crate) use validation::use_validate_with;
 pub use validation::{FieldValidation, ValidationOptions, use_validate};

@@ -2,6 +2,7 @@
 //! sinais do Leptos e ao `Form` (≈ `use-validate.js` + `useFormChild` do Quasar).
 
 use std::rc::Rc;
+use std::sync::Arc;
 
 use futures::future::{FutureExt, LocalBoxFuture};
 use leptos::prelude::*;
@@ -125,6 +126,8 @@ struct Ctl<T: Send + Sync + 'static> {
     state: StoredValue<ValidationState>,
     rules: StoredValue<Vec<Rule<T>>, LocalStorage>,
     value: Signal<T>,
+    /// Compara dois valores (o `PartialEq` do tipo, ou a identidade das options do `Select`).
+    same: StoredValue<Same<T>>,
     disable: Signal<bool>,
     inner_error: RwSignal<bool>,
     message: RwSignal<Option<String>>,
@@ -138,7 +141,7 @@ impl<T: Send + Sync + 'static> Clone for Ctl<T> {
 }
 impl<T: Send + Sync + 'static> Copy for Ctl<T> {}
 
-impl<T: Clone + PartialEq + Send + Sync + 'static> Ctl<T> {
+impl<T: Clone + Send + Sync + 'static> Ctl<T> {
     /// Copia o estado puro para os sinais.
     fn publish(self) {
         let Some((e, m, l)) = self
@@ -178,10 +181,12 @@ impl<T: Clone + PartialEq + Send + Sync + 'static> Ctl<T> {
                 self.publish();
                 async move {
                     let res = fut.await;
-                    let changed = self
-                        .value
-                        .try_get_untracked()
-                        .is_some_and(|now| now != start);
+                    let changed = self.value.try_get_untracked().is_some_and(|now| {
+                        !self
+                            .same
+                            .try_with_value(|same| same(&now, &start))
+                            .unwrap_or(true)
+                    });
                     let disabled = self.disable.try_get_untracked().unwrap_or(true);
                     let again = self
                         .state
@@ -246,6 +251,23 @@ pub fn use_validate<T>(value: Signal<T>, opts: ValidationOptions<T>) -> FieldVal
 where
     T: Clone + PartialEq + Send + Sync + 'static,
 {
+    use_validate_with(value, opts, Arc::new(|a: &T, b: &T| a == b))
+}
+
+/// Comparador de valores (ver `use_validate_with`).
+pub(crate) type Same<T> = Arc<dyn Fn(&T, &T) -> bool + Send + Sync>;
+
+/// [`use_validate`] para modelos sem `PartialEq`: `same` diz se dois valores são o mesmo (o
+/// `Select` usa a identidade das options). Só é consultado ao fim de uma regra assíncrona, para
+/// saber se o valor mudou enquanto ela rodava.
+pub(crate) fn use_validate_with<T>(
+    value: Signal<T>,
+    opts: ValidationOptions<T>,
+    same: Same<T>,
+) -> FieldValidation
+where
+    T: Clone + Send + Sync + 'static,
+{
     let ValidationOptions {
         rules,
         lazy_rules,
@@ -261,6 +283,7 @@ where
         state: StoredValue::new(ValidationState::new(lazy_rules, !rules.is_empty())),
         rules: StoredValue::new_local(rules),
         value,
+        same: StoredValue::new(same),
         disable,
         inner_error,
         message,

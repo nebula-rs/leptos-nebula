@@ -15,7 +15,6 @@ use leptos::leptos_dom::helpers::set_timeout;
 use leptos::{ev, html, portal::Portal, prelude::*};
 use wasm_bindgen::JsCast;
 
-use super::SelectOption;
 use super::nav::{
     NavKey, TypeAhead, find_prefix, initial_active, join_labels, move_active, nav_key, toggle,
     typeahead_char,
@@ -29,7 +28,7 @@ use crate::position::{Horizontal, Position, Vertical};
 use crate::util::{cls, next_id};
 use crate::{
     Color, Field, FieldAfter, FieldAppend, FieldBefore, FieldDesign, FieldError, FieldHint,
-    FieldLoading, FieldPrepend, FieldValidation, Icon,
+    FieldLoading, FieldPrepend, FieldValidation, Icon, Options,
 };
 
 const BOTTOM_START: Position = Position::new(Vertical::Bottom, Horizontal::Start);
@@ -79,7 +78,7 @@ impl<T: Send + Sync> Copy for Model<T> {}
 /// Tudo que o `Select` e o `SelectMultiple` repassam: o controle e as props do `Field`.
 pub(super) struct Config<T: Send + Sync + 'static> {
     pub model: Model<T>,
-    pub options: Signal<Vec<SelectOption<T>>>,
+    pub options: Options<T>,
     pub id: String,
     pub placeholder: Option<String>,
     pub display_value: MaybeProp<String>,
@@ -119,7 +118,7 @@ pub(super) struct Config<T: Send + Sync + 'static> {
 /// Monta o `Field` com o controle dentro.
 pub(super) fn select_field<T>(cfg: Config<T>) -> impl IntoView
 where
-    T: Clone + PartialEq + Send + Sync + 'static,
+    T: Clone + Send + Sync + 'static,
 {
     let Config {
         model,
@@ -162,33 +161,40 @@ where
     let selected = model.selected;
 
     // As opções e a seleção viram vetores simples: o resto do controle não depende de `T`.
+    let items = options.items();
     let labels =
-        Memo::new(move |_| options.with(|o| o.iter().map(|x| x.label.clone()).collect::<Vec<_>>()));
+        Memo::new(move |_| items.with(|o| o.iter().map(|x| x.label.clone()).collect::<Vec<_>>()));
     let disabled_flags =
-        Memo::new(move |_| options.with(|o| o.iter().map(|x| x.disable).collect::<Vec<_>>()));
-    let selected_flags = Memo::new(move |_| {
-        options.with(|o| {
-            selected.with(|s| {
-                o.iter()
-                    .map(|x| s.contains(&x.value))
-                    .collect::<Vec<bool>>()
+        Memo::new(move |_| items.with(|o| o.iter().map(|x| x.disable).collect::<Vec<_>>()));
+    let selected_flags = Memo::new({
+        let options = options.clone();
+        move |_| {
+            items.with(|o| {
+                selected.with(|s| {
+                    o.iter()
+                        .map(|x| s.iter().any(|y| options.same(y, &x.value)))
+                        .collect::<Vec<bool>>()
+                })
             })
-        })
+        }
     });
     // Escolher uma opção: o `Select` troca o valor; o `SelectMultiple` alterna.
-    let choose = Callback::new(move |i: usize| {
-        let Some(opt) = options.with_untracked(|o| o.get(i).cloned()) else {
-            return;
-        };
-        if opt.disable {
-            return;
-        }
-        if model.multiple {
-            let mut current = selected.get_untracked();
-            toggle(&mut current, opt.value);
-            model.set.run(current);
-        } else {
-            model.set.run(vec![opt.value]);
+    let choose = Callback::new({
+        let options = options.clone();
+        move |i: usize| {
+            let Some(opt) = items.with_untracked(|o| o.get(i).cloned()) else {
+                return;
+            };
+            if opt.disable {
+                return;
+            }
+            if model.multiple {
+                let mut current = selected.get_untracked();
+                toggle(&mut current, opt.value, |a, b| options.same(a, b));
+                model.set.run(current);
+            } else {
+                model.set.run(vec![opt.value]);
+            }
         }
     });
 

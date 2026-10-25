@@ -1,12 +1,14 @@
 //! `<Select>` e `<SelectMultiple>`: o mesmo controle (`control.rs`), com o modelo adaptado.
 
+use std::sync::Arc;
+
 use leptos::prelude::*;
 
-use super::SelectOption;
 use super::control::{Config, Model, generated_id, select_field};
+use crate::field::use_validate_with;
 use crate::{
     Color, FieldAfter, FieldAppend, FieldBefore, FieldDesign, FieldError, FieldHint, FieldLoading,
-    FieldPrepend, LazyRules, Rule, ValidationOptions, use_validate,
+    FieldPrepend, LazyRules, Options, Rule, ValidationOptions,
 };
 
 /// `Select` de uma opção. ≈ `QSelect` sem `multiple`.
@@ -40,7 +42,7 @@ pub fn Select<T>(
     value: RwSignal<Option<T>>,
     /// As opções.
     #[prop(into)]
-    options: Signal<Vec<SelectOption<T>>>,
+    options: Options<T>,
     /// `id` do campo (o `for` do label). Sem ele, o `Select` gera `lx-select-<n>`.
     #[prop(optional, into)]
     id: Option<String>,
@@ -111,9 +113,9 @@ pub fn Select<T>(
     #[prop(optional)] loading_slot: Option<FieldLoading>,
 ) -> impl IntoView
 where
-    T: Clone + PartialEq + Send + Sync + 'static,
+    T: Clone + Send + Sync + 'static,
 {
-    let validation = use_validate(
+    let validation = use_validate_with(
         value.into(),
         ValidationOptions {
             rules,
@@ -122,6 +124,14 @@ where
             error,
             error_message,
             name,
+        },
+        {
+            let options = options.clone();
+            Arc::new(move |a: &Option<T>, b: &Option<T>| match (a, b) {
+                (None, None) => true,
+                (Some(a), Some(b)) => options.same(a, b),
+                _ => false,
+            })
         },
     );
     let model = Model {
@@ -185,7 +195,7 @@ pub fn SelectMultiple<T>(
     value: RwSignal<Vec<T>>,
     /// As opções.
     #[prop(into)]
-    options: Signal<Vec<SelectOption<T>>>,
+    options: Options<T>,
     /// `id` do campo (o `for` do label). Sem ele, gera `lx-select-<n>`.
     #[prop(optional, into)]
     id: Option<String>,
@@ -256,9 +266,9 @@ pub fn SelectMultiple<T>(
     #[prop(optional)] loading_slot: Option<FieldLoading>,
 ) -> impl IntoView
 where
-    T: Clone + PartialEq + Send + Sync + 'static,
+    T: Clone + Send + Sync + 'static,
 {
-    let validation = use_validate(
+    let validation = use_validate_with(
         value.into(),
         ValidationOptions {
             rules,
@@ -267,6 +277,12 @@ where
             error,
             error_message,
             name,
+        },
+        {
+            let options = options.clone();
+            Arc::new(move |a: &Vec<T>, b: &Vec<T>| {
+                a.len() == b.len() && a.iter().zip(b).all(|(a, b)| options.same(a, b))
+            })
         },
     );
     let model = Model {

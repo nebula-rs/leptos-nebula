@@ -160,8 +160,8 @@ pub(crate) fn find_prefix<S: AsRef<str>>(
 }
 
 /// Alterna `v` na lista (ordem de escolha). `true` se foi acrescentado.
-pub(crate) fn toggle<T: PartialEq>(list: &mut Vec<T>, v: T) -> bool {
-    if let Some(i) = list.iter().position(|x| *x == v) {
+pub(crate) fn toggle<T>(list: &mut Vec<T>, v: T, same: impl Fn(&T, &T) -> bool) -> bool {
+    if let Some(i) = list.iter().position(|x| same(x, &v)) {
         list.remove(i);
         false
     } else {
@@ -321,12 +321,12 @@ mod tests {
     #[test]
     fn toggle_adds_and_removes_in_choice_order() {
         let mut l = vec![3, 1];
-        assert!(toggle(&mut l, 2));
+        assert!(toggle(&mut l, 2, |a, b| a == b));
         assert_eq!(l, vec![3, 1, 2]);
-        assert!(!toggle(&mut l, 1));
+        assert!(!toggle(&mut l, 1, |a, b| a == b));
         assert_eq!(l, vec![3, 2]);
-        assert!(!toggle(&mut l, 3));
-        assert!(!toggle(&mut l, 2));
+        assert!(!toggle(&mut l, 3, |a, b| a == b));
+        assert!(!toggle(&mut l, 2, |a, b| a == b));
         assert!(l.is_empty());
     }
 
