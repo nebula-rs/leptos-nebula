@@ -89,6 +89,9 @@
   --lx-control-height: 2.25rem;
   --lx-control-height-sm: 1.75rem;
   --lx-header-height: 3.75rem;
+  --lx-footer-height: 3.5rem;
+  --lx-bottom-bar-height: 3.5rem;
+  --lx-bottom-bar-max-width: var(--lx-content-max-width);
   --lx-content-max-width: 72rem;
 
   /* Movimento */
@@ -229,6 +232,16 @@
   --lx-header-border: var(--lx-color-border);
   --lx-header-shadow: var(--lx-shadow-md);
   --lx-header-backdrop: var(--lx-surface-backdrop);
+  --lx-footer-bg: var(--lx-color-bg);
+  --lx-footer-color: var(--lx-color-on-surface);
+  --lx-footer-border: var(--lx-color-border);
+  --lx-footer-shadow: 0 -6px 24px rgb(28 31 35 / 0.06);
+  --lx-footer-backdrop: var(--lx-surface-backdrop);
+  --lx-bottom-bar-bg: var(--lx-color-surface);
+  --lx-bottom-bar-color: var(--lx-color-on-surface);
+  --lx-bottom-bar-border: var(--lx-color-border);
+  --lx-bottom-bar-shadow: var(--lx-footer-shadow);
+  --lx-bottom-bar-backdrop: var(--lx-surface-backdrop);
   --lx-drawer-bg: var(--lx-color-bg);
   --lx-drawer-shadow: 0 24px 64px rgb(28 31 35 / 0.18);
   --lx-item-radius: var(--lx-radius-md);
@@ -297,6 +310,7 @@
   --lx-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --lx-shadow-md: 0 6px 24px rgb(0 0 0 / 0.35);
   --lx-drawer-shadow: 0 24px 64px rgb(0 0 0 / 0.5);
+  --lx-footer-shadow: 0 -6px 24px rgb(0 0 0 / 0.35);
   --lx-shadow-popup: 0 8px 24px rgb(0 0 0 / 0.5);
   --lx-tooltip-bg: var(--lx-p-linen-200);
   --lx-tooltip-color: var(--lx-p-ink-900);

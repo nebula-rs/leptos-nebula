@@ -6,8 +6,9 @@ use crate::util::cls;
 /// Estrutura da página: cabeçalho em cima, [`Drawer`] ao lado, [`PageContainer`] no meio.
 /// ≈ `QLayout`, mas com estrutura fixa (**sem** `view`).
 ///
-/// Filhos esperados: [`Header`], [`Drawer`]s e [`PageContainer`].
+/// Filhos esperados: [`Header`], [`Drawer`]s, [`PageContainer`] e, opcionalmente, [`Footer`].
 /// O drawer fixo se posiciona abaixo de um [`Header`]; sem cabeçalho, ajuste `--lx-header-height`.
+/// Com [`Footer`], a gaveta fixa encurta pela altura dele (`--lx-footer-height`).
 #[component]
 pub fn Layout(children: Children) -> impl IntoView {
     view! { <div class="lx-layout">{children()}</div> }
@@ -28,6 +29,74 @@ pub fn Header(
         if elevated { "lx-header-elevated" } else { "" },
     ]);
     view! { <header class=class>{children()}</header> }
+}
+
+/// Rodapé fixo embaixo, dentro do [`Layout`]. ≈ `QFooter`.
+///
+/// Ocupa a última linha da grade do `Layout`, então o [`PageContainer`] já reserva o espaço
+/// dele: o conteúdo nunca fica escondido. Fica colado na borda inferior da tela (ou da caixa
+/// que rola) enquanto o conteúdo é mais alto, e respeita `env(safe-area-inset-bottom)`.
+/// Altura mínima por `--lx-footer-height`. Para uma barra fora do `Layout`, veja [`BottomBar`].
+///
+/// Ainda não: `reveal`, `model_value`, `height_hint`.
+#[component]
+pub fn Footer(
+    #[prop(optional)] bordered: bool,
+    #[prop(optional)] elevated: bool,
+    children: Children,
+) -> impl IntoView {
+    let class = cls([
+        "lx-footer",
+        if bordered { "lx-footer-bordered" } else { "" },
+        if elevated { "lx-footer-elevated" } else { "" },
+    ]);
+    view! { <footer class=class>{children()}</footer> }
+}
+
+/// Classe que reserva embaixo o espaço do [`BottomBar`] (`--lx-bottom-bar-height` + área segura
+/// + respiro). Aplique ao contêiner do conteúdo: `class=BOTTOM_BAR_SPACE`.
+///
+/// É uma constante literal para o gerador de CSS sempre enxergar o shortcut
+/// `lx-bottom-bar-space`.
+pub const BOTTOM_BAR_SPACE: &str = "lx-bottom-bar-space";
+
+/// Barra de navegação/ações fixa no rodapé da tela, para uso **fora** do [`Layout`]
+/// (apps mobile). Sem equivalente no Quasar.
+///
+/// O conteúdo (`children`) fica centralizado até `--lx-bottom-bar-max-width` e a barra respeita
+/// `env(safe-area-inset-bottom)`. Por ser `position: fixed`, ela cobre o fim da página: dê ao
+/// contêiner do conteúdo a classe [`BOTTOM_BAR_SPACE`] (`lx-bottom-bar-space`, padding de baixo =
+/// `--lx-bottom-bar-height` + área segura). Para conter a barra numa caixa (exemplos), a caixa
+/// precisa de `transform: translateZ(0)`.
+#[component]
+pub fn BottomBar(
+    /// Linha no topo da barra.
+    #[prop(default = true)]
+    bordered: bool,
+    #[prop(optional)] elevated: bool,
+    /// Nome acessível da navegação.
+    #[prop(default = "Navegação")]
+    aria_label: &'static str,
+    children: Children,
+) -> impl IntoView {
+    let class = cls([
+        "lx-bottom-bar",
+        if bordered {
+            "lx-bottom-bar-bordered"
+        } else {
+            ""
+        },
+        if elevated {
+            "lx-bottom-bar-elevated"
+        } else {
+            ""
+        },
+    ]);
+    view! {
+        <nav class=class aria-label=aria_label>
+            <div class="lx-bottom-bar-inner">{children()}</div>
+        </nav>
+    }
 }
 
 /// Barra de ferramentas. ≈ `QToolbar`.

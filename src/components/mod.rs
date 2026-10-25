@@ -31,7 +31,10 @@ pub use dialog::{Dialog, DialogPosition};
 pub use empty_state::{EmptyState, EmptyStateActions};
 pub use expansion_item::{ExpansionItem, ExpansionItemHeader};
 pub use icon::Icon;
-pub use layout::{Drawer, DrawerSide, Header, Layout, Page, PageContainer, Toolbar, ToolbarTitle};
+pub use layout::{
+    BOTTOM_BAR_SPACE, BottomBar, Drawer, DrawerSide, Footer, Header, Layout, Page, PageContainer,
+    Toolbar, ToolbarTitle,
+};
 pub use linear_progress::{LinearProgress, ProgressSegment};
 pub use list::{Item, ItemLabel, ItemSection, List};
 pub use markup_table::{MarkupSeparator, MarkupTable};

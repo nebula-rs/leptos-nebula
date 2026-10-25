@@ -60,3 +60,8 @@ h1, h2, h3, h4, h5, h6 {
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
 }
+
+/* Layout com Footer: a gaveta fixa encurta pela altura do rodapé (lida pelo shortcut `lx-drawer-fixed-*`). */
+.lx-layout:has(> .lx-footer) {
+  --lx-layout-footer-space: calc(var(--lx-footer-height) + env(safe-area-inset-bottom, 0px));
+}
