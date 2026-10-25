@@ -638,6 +638,21 @@ export const shortcuts: Shortcuts = {
   'lx-item-label-caption': `block ${fs('xs')} ${color('on-surface-muted')}`,
   'lx-item-label-clamp': 'overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical]',
 
+  // ── ExpansionItem ────────────────────────────────────────────────────────
+  // Estados exclusivos como shortcuts completos. O conteúdo anima `grid-template-rows` (0fr → 1fr)
+  // e o fechado fica `visibility: hidden` (a visibilidade só muda ao fim da saída, por isso o atraso).
+  'lx-expansion-item': 'block box-border',
+  'lx-expansion-item-sep-none': `${p('border-top', '0 solid transparent')}`,
+  'lx-expansion-item-sep-closed': `${p('border-top', `${v('border-width')} solid transparent`)} ${p('border-bottom', `${v('border-width')} solid transparent`)}`,
+  'lx-expansion-item-sep-open': `${border('top')} ${border('bottom')}`,
+  'lx-expansion-header-enabled': 'block',
+  'lx-expansion-header-disabled': `block pointer-events-none cursor-not-allowed ${p('opacity', v('state-disabled-opacity'))}`,
+  'lx-expansion-icon-closed': `flex items-center ${p('transition', `transform ${v('expansion-item-duration')} ${v('expansion-item-easing')}`)} motion-reduce:${p('transition', 'none')}`,
+  'lx-expansion-icon-open': `flex items-center ${p('transform', 'rotate(180deg)')} ${p('transition', `transform ${v('expansion-item-duration')} ${v('expansion-item-easing')}`)} motion-reduce:${p('transition', 'none')}`,
+  'lx-expansion-content-closed': `grid ${p('grid-template-rows', '0fr')} ${p('visibility', 'hidden')} ${p('transition', `grid-template-rows ${v('expansion-item-duration')} ${v('expansion-item-easing')}, visibility 0s linear ${v('expansion-item-duration')}`)} motion-reduce:${p('transition', 'none')}`,
+  'lx-expansion-content-open': `grid ${p('grid-template-rows', '1fr')} ${p('visibility', 'visible')} ${p('transition', `grid-template-rows ${v('expansion-item-duration')} ${v('expansion-item-easing')}, visibility 0s linear 0s`)} motion-reduce:${p('transition', 'none')}`,
+  'lx-expansion-content-clip': 'min-h-0 overflow-hidden',
+
   // ── Layout / Header / Toolbar / Drawer / Page ─────────────────────────────
   'lx-layout': [
     'grid min-h-screen box-border',

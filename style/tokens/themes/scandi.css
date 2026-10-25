@@ -155,6 +155,9 @@
   --lx-field-shadow-opacity-focused: 0.7;
   /* Input: altura máxima do autogrow (com mais conteúdo, o controle rola) */
   --lx-input-autogrow-max-height: none;
+  /* ExpansionItem (altura e seta animadas; `none` por prefers-reduced-motion no shortcut) */
+  --lx-expansion-item-duration: var(--lx-duration-medium);
+  --lx-expansion-item-easing: var(--lx-easing);
   /* Spinner (rotação lenta, não parada, com prefers-reduced-motion) */
   --lx-spinner-rotate-duration: 2s;
   --lx-spinner-dash-duration: 1.5s;
