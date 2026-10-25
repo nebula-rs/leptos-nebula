@@ -256,6 +256,12 @@
   --lx-table-header-weight: var(--lx-font-weight-strong);
   --lx-table-header-transform: none;
   --lx-table-row-hover: var(--lx-color-surface-muted);
+  --lx-table-title-size: var(--lx-font-size-lg);
+  --lx-table-title-weight: var(--lx-font-weight-strong);
+  --lx-table-progress-height: 3px;
+  --lx-table-sort-idle-opacity: 0.35;
+  --lx-table-footer-color: var(--lx-color-on-surface-muted);
+  --lx-table-footer-border: var(--lx-color-border);
   --lx-code-bg: var(--lx-p-linen-100);
   --lx-code-text: var(--lx-p-ink-800);
   --lx-code-comment: var(--lx-p-ink-500);

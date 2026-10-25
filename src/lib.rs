@@ -13,6 +13,7 @@ mod form;
 mod input;
 mod select;
 mod styles;
+mod table;
 mod theme;
 mod util;
 
@@ -34,4 +35,5 @@ pub use input::{FillMask, Input, InputHandle, InputType};
 pub use position::{Horizontal, ParsePositionError, Position, Vertical};
 pub use select::{Select, SelectMultiple, SelectOption};
 pub use styles::{CSS, UiStyles};
+pub use table::{Table, TableColumn, TablePagination, TablePaginationLabels};
 pub use theme::{Mode, Theme, ThemeStore, provide_theme, use_theme};

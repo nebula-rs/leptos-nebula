@@ -803,4 +803,41 @@ export const shortcuts: Shortcuts = {
   'lx-mt-unbordered': 'border-none',
   'lx-mt-wrap': '[&_td]:whitespace-normal [&_th]:whitespace-normal',
   'lx-mt-nowrap': '[&_td]:whitespace-nowrap [&_th]:whitespace-nowrap',
+
+  // ── Table ─────────────────────────────────────────────────────────────────
+  // O quadro (título, progresso, tabela, estado vazio, rodapé); o estilo das células é do `lx-mt`.
+  'lx-table': [
+    'relative flex flex-col overflow-hidden box-border',
+    `rounded-[${v('radius-md')}]`,
+    p('background', v('card-bg')),
+    color('on-surface'),
+    fs('sm'),
+  ].join(' '),
+  'lx-table-title': `px-[${sp('md')}] py-[${sp('sm')}] ${p('font-size', v('table-title-size'))} ${p('font-weight', v('table-title-weight'))}`,
+  'lx-table-progress': `relative shrink-0 overflow-hidden h-[${v('table-progress-height')}]`,
+  'lx-table-align-left': 'text-left',
+  'lx-table-align-center': 'text-center',
+  'lx-table-align-right': 'text-right',
+  'lx-table-sort': [
+    'inline-flex items-center border-0 bg-transparent p-0 cursor-pointer',
+    `gap-[${sp('xs')}]`,
+    p('font', 'inherit'),
+    p('color', 'inherit'),
+    p('text-transform', 'inherit'),
+    'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2',
+    `focus-visible:[outline-color:${v('color-primary')}]`,
+  ].join(' '),
+  'lx-table-sort-icon': `inline-block shrink-0 transition-[transform,opacity] duration-[${v('duration-fast')}]`,
+  'lx-table-sort-icon-idle': p('opacity', v('table-sort-idle-opacity')),
+  'lx-table-sort-icon-asc': 'opacity-100',
+  'lx-table-sort-icon-desc': `opacity-100 ${p('transform', 'rotate(180deg)')}`,
+  'lx-table-empty': border('top'),
+  'lx-table-loading': `flex items-center justify-center gap-[${sp('sm')}] px-[${sp('md')}] py-[${sp('xl')}] ${color('on-surface-muted')}`,
+  'lx-table-footer': [
+    'flex flex-wrap items-center justify-end box-border',
+    `gap-[${sp('md')}] px-[${sp('md')}] py-[${sp('xs')}]`,
+    border('top', 'table-footer-border'),
+    p('color', v('table-footer-color')),
+  ].join(' '),
+  'lx-table-pages': `flex items-center gap-[${sp('xs')}]`,
 }
