@@ -183,6 +183,31 @@
   --lx-empty-state-title-weight: var(--lx-font-weight-strong);
   --lx-empty-state-hint: var(--lx-color-on-surface-muted);
   --lx-empty-state-hint-max-width: 28rem;
+  /* DetailList (coluna do termo; valor desce quando não cabe ao lado dela) */
+  --lx-detail-list-term-width: 12rem;
+  --lx-detail-list-value-min-width: 14rem;
+  --lx-detail-list-row-padding: var(--lx-space-sm);
+  --lx-detail-list-row-padding-dense: var(--lx-space-xs);
+  --lx-detail-list-separator: var(--lx-border-width) solid var(--lx-color-border);
+  /* PageHeader */
+  --lx-page-header-margin: var(--lx-space-lg);
+  --lx-page-header-title-size: var(--lx-font-size-xl);
+  --lx-page-header-title-weight: var(--lx-font-weight-heading);
+  --lx-page-header-title-line-height: 1.2;
+  --lx-page-header-title-color: var(--lx-color-on-surface);
+  --lx-page-header-subtitle-color: var(--lx-color-on-surface-muted);
+  /* Stat e StatGrid (colunas por largura mínima) */
+  --lx-stat-grid-min-width: 12rem;
+  --lx-stat-grid-gap: var(--lx-space-lg);
+  --lx-stat-label-color: var(--lx-color-on-surface-muted);
+  --lx-stat-label-weight: var(--lx-font-weight-strong);
+  --lx-stat-value-size: var(--lx-font-size-xl);
+  --lx-stat-value-weight: var(--lx-font-weight-heading);
+  --lx-stat-value-line-height: 1.2;
+  --lx-stat-value-color: var(--lx-color-on-surface);
+  --lx-stat-hint-color: var(--lx-color-on-surface-muted);
+  --lx-stat-icon-size: 1.5rem;
+  --lx-stat-icon-color: var(--lx-color-on-surface-muted);
   /* Dialog (<dialog> nativo; painel sobre o fundo `scrim`) */
   --lx-dialog-bg: var(--lx-color-surface);
   --lx-dialog-color: var(--lx-color-on-surface);

@@ -550,6 +550,81 @@ export const shortcuts: Shortcuts = {
   'lx-empty-state-hint': `${p('color', v('empty-state-hint'))} max-w-[${v('empty-state-hint-max-width')}]`,
   'lx-empty-state-actions': `flex flex-wrap items-center justify-center gap-[${sp('sm')}] mt-[${sp('sm')}]`,
 
+  // ── DetailList ────────────────────────────────────────────────────────────
+  // `<dl>` de linhas `<div><dt/><dd/></div>`. O layout, a densidade e o separador são shortcuts
+  // completos e exclusivos; a linha é um flex que quebra quando o contêiner é estreito (o valor
+  // desce para baixo do termo), sem depender da largura da janela.
+  'lx-detail-list': [
+    'block m-0 box-border',
+    fs('sm'),
+    color('on-surface'),
+  ].join(' '),
+  'lx-detail-list-horizontal': [
+    '[&>div]:flex [&>div]:flex-wrap',
+    `[&>div]:[column-gap:${sp('lg')}]`,
+    `[&>div]:[row-gap:${sp('xs')}]`,
+    `[&_dt]:${p('flex', `0 0 ${v('detail-list-term-width')}`)}`,
+    '[&_dt]:max-w-full',
+    `[&_dd]:${p('flex', `1 1 ${v('detail-list-value-min-width')}`)}`,
+  ].join(' '),
+  'lx-detail-list-vertical': [
+    '[&>div]:flex [&>div]:flex-col',
+    `[&>div]:[row-gap:${sp('xs')}]`,
+  ].join(' '),
+  'lx-detail-list-normal': `[&>div]:${p('padding-block', v('detail-list-row-padding'))}`,
+  'lx-detail-list-dense': `[&>div]:${p('padding-block', v('detail-list-row-padding-dense'))}`,
+  'lx-detail-list-separated': `[&>div+div]:${p('border-top', v('detail-list-separator'))}`,
+  'lx-detail-term': `m-0 min-w-0 break-words ${color('on-surface-muted')}`,
+  'lx-detail-value': 'm-0 min-w-0 break-words',
+
+  // ── PageHeader ────────────────────────────────────────────────────────────
+  // Texto cresce; ações ficam à direita e, se não couberem, descem (flex-wrap).
+  'lx-page-header': [
+    'flex flex-wrap items-center box-border',
+    `gap-[${sp('md')}]`,
+    p('margin-bottom', v('page-header-margin')),
+  ].join(' '),
+  'lx-page-header-text': 'flex flex-col grow basis-0 min-w-[min(100%,12rem)]',
+  'lx-page-header-title': [
+    'm-0',
+    p('font-size', v('page-header-title-size')),
+    p('font-weight', v('page-header-title-weight')),
+    p('line-height', v('page-header-title-line-height')),
+    p('color', v('page-header-title-color')),
+  ].join(' '),
+  'lx-page-header-subtitle': [
+    'm-0',
+    fs('sm'),
+    p('color', v('page-header-subtitle-color')),
+  ].join(' '),
+  'lx-page-header-actions': `flex flex-wrap items-center gap-[${sp('sm')}]`,
+
+  // ── Stat ──────────────────────────────────────────────────────────────────
+  'lx-stat-grid': [
+    'grid',
+    p('grid-template-columns', `repeat(auto-fit, minmax(min(100%, ${v('stat-grid-min-width')}), 1fr))`),
+    p('gap', v('stat-grid-gap')),
+  ].join(' '),
+  'lx-stat': `flex items-start justify-between box-border min-w-0 gap-[${sp('md')}]`,
+  'lx-stat-body': `flex flex-col min-w-0 gap-[${sp('xs')}]`,
+  'lx-stat-label': [
+    fs('sm'),
+    p('color', v('stat-label-color')),
+    p('font-weight', v('stat-label-weight')),
+  ].join(' '),
+  'lx-stat-value': [
+    p('font-size', v('stat-value-size')),
+    p('font-weight', v('stat-value-weight')),
+    p('line-height', v('stat-value-line-height')),
+    'break-words',
+  ].join(' '),
+  'lx-stat-value-plain': p('color', v('stat-value-color')),
+  'lx-stat-value-tone': p('color', 'var(--lx-tone)'),
+  'lx-stat-hint': [fs('xs'), p('color', v('stat-hint-color'))].join(' '),
+  'lx-stat-icon': `inline-flex shrink-0 ${p('font-size', v('stat-icon-size'))} ${p('line-height', '1')}`,
+  'lx-stat-icon-plain': p('color', v('stat-icon-color')),
+  'lx-stat-icon-tone': p('color', 'var(--lx-tone)'),
+
   // ── Dialog ────────────────────────────────────────────────────────────────
   // `<dialog>` nativo ocupa a janela inteira e é transparente; o painel (`lx-dialog-body`) é o
   // que se vê. Posição, tamanho e estado (entrada/saída) são shortcuts completos e exclusivos.
