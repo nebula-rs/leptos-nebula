@@ -481,6 +481,55 @@ export const shortcuts: Shortcuts = {
     `motion-reduce:${p('animation-duration', `${v('spinner-rotate-duration-reduced')}, ${v('spinner-dash-duration-reduced')}`)}`,
   ].join(' '),
 
+  // ── LinearProgress ────────────────────────────────────────────────────────
+  // Largura total do pai e altura própria (inline): não depende de altura do pai.
+  // Raio só nas variantes (rounded/square); direção (start/end, motion/segments) também.
+  'lx-linear-progress': 'block relative w-full overflow-hidden shrink-0 box-border',
+  'lx-linear-progress-rounded': p('border-radius', v('linear-progress-radius')),
+  'lx-linear-progress-square': 'rounded-none',
+  'lx-linear-progress-layer': 'absolute inset-0',
+  'lx-linear-progress-track': p('background', v('linear-progress-track-bg')),
+  'lx-linear-progress-track-tone': `${p('background', v('tone'))} ${p('opacity', v('linear-progress-track-tone-opacity'))}`,
+  'lx-linear-progress-bar': `absolute top-0 bottom-0 ${p('background', v('tone'))}`,
+  'lx-linear-progress-buffer': `absolute top-0 bottom-0 ${p('background', v('tone'))} ${p('opacity', v('linear-progress-buffer-opacity'))}`,
+  'lx-linear-progress-stripe': [
+    'absolute top-0 bottom-0',
+    p('background-image', v('linear-progress-stripe-image')),
+    p('background-size', `${v('linear-progress-stripe-size')} ${v('linear-progress-stripe-size')}`),
+  ].join(' '),
+  'lx-linear-progress-start': 'left-0',
+  'lx-linear-progress-end': 'right-0',
+  'lx-linear-progress-animated': [
+    p('transition-property', 'width'),
+    p('transition-duration', v('linear-progress-transition-duration')),
+    p('transition-timing-function', v('linear-progress-transition-easing')),
+    `motion-reduce:${p('transition-duration', '0s')}`,
+  ].join(' '),
+  'lx-linear-progress-segments': 'absolute inset-0 flex flex-row',
+  'lx-linear-progress-segments-reverse': 'absolute inset-0 flex flex-row-reverse',
+  'lx-linear-progress-segment': `h-full shrink-0 ${p('background', v('tone'))}`,
+  // indeterminado/query: duas barras de largura total animadas; reverse espelha o conjunto
+  'lx-linear-progress-motion': 'absolute inset-0 overflow-hidden',
+  'lx-linear-progress-motion-reverse': `absolute inset-0 overflow-hidden ${p('scale', '-1 1')}`,
+  'lx-linear-progress-indeterminate': [
+    'absolute inset-0',
+    p('background', v('tone')),
+    p('transform-origin', '0 0'),
+    p('animation', 'lx-linear-progress-indeterminate var(--lx-linear-progress-speed) cubic-bezier(.65,.815,.735,.395) infinite'),
+    // reduced-motion: mais lento (3x), não parado
+    `motion-reduce:${p('animation-duration', 'calc(var(--lx-linear-progress-speed) * 3)')}`,
+  ].join(' '),
+  'lx-linear-progress-indeterminate-short': [
+    'absolute inset-0',
+    p('background', v('tone')),
+    p('transform-origin', '0 0'),
+    p('transform', 'translateX(-101%)'),
+    p('animation', 'lx-linear-progress-indeterminate-short var(--lx-linear-progress-speed) cubic-bezier(.165,.84,.44,1) infinite'),
+    p('animation-delay', 'calc(var(--lx-linear-progress-speed) * 0.55)'),
+    `motion-reduce:${p('animation-duration', 'calc(var(--lx-linear-progress-speed) * 3)')}`,
+    `motion-reduce:${p('animation-delay', 'calc(var(--lx-linear-progress-speed) * 1.65)')}`,
+  ].join(' '),
+
   // ── EmptyState ────────────────────────────────────────────────────────────
   'lx-empty-state': [
     'flex flex-col items-center justify-center text-center box-border',

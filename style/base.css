@@ -41,6 +41,19 @@ h1, h2, h3, h4, h5, h6 {
   100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124px; }
 }
 
+/* LinearProgress: barras do indeterminado/query (duração e reduced-motion nos shortcuts `lx-linear-progress-indeterminate*`) */
+@keyframes lx-linear-progress-indeterminate {
+  0% { transform: translateX(-35%) scaleX(0.35); }
+  60% { transform: translateX(100%) scaleX(0.9); }
+  100% { transform: translateX(100%) scaleX(0.9); }
+}
+
+@keyframes lx-linear-progress-indeterminate-short {
+  0% { transform: translateX(-101%) scale(1); }
+  60% { transform: translateX(107%) scaleX(0.01); }
+  100% { transform: translateX(107%) scaleX(0.01); }
+}
+
 /* Dialog: "sacudir" do `persistent` (duração e reduced-motion no shortcut `lx-dialog-shake`) */
 @keyframes lx-dialog-shake {
   0% { transform: scale(1); }

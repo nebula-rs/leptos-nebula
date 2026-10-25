@@ -163,6 +163,15 @@
   --lx-spinner-dash-duration: 1.5s;
   --lx-spinner-rotate-duration-reduced: 6s;
   --lx-spinner-dash-duration-reduced: 4.5s;
+  /* LinearProgress (trilha; transição do valor; listras; `animation_speed` vem inline) */
+  --lx-linear-progress-track-bg: var(--lx-color-border);
+  --lx-linear-progress-track-tone-opacity: 0.4;
+  --lx-linear-progress-buffer-opacity: 0.4;
+  --lx-linear-progress-radius: 9999px;
+  --lx-linear-progress-transition-duration: var(--lx-duration-medium);
+  --lx-linear-progress-transition-easing: var(--lx-easing);
+  --lx-linear-progress-stripe-image: linear-gradient(45deg, rgb(255 255 255 / 0.15) 25%, rgb(255 255 255 / 0) 25%, rgb(255 255 255 / 0) 50%, rgb(255 255 255 / 0.15) 50%, rgb(255 255 255 / 0.15) 75%, rgb(255 255 255 / 0) 75%, rgb(255 255 255 / 0));
+  --lx-linear-progress-stripe-size: 40px;
   /* EmptyState */
   --lx-empty-state-padding: var(--lx-space-xl) var(--lx-space-md);
   --lx-empty-state-icon-size: 2rem;
