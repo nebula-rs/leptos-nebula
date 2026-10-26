@@ -6,6 +6,6 @@
 
 mod component;
 mod control;
-mod nav;
+pub(crate) mod nav;
 
 pub use component::{Select, SelectMultiple};

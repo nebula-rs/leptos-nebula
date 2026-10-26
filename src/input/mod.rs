@@ -5,7 +5,7 @@
 
 mod autogrow;
 mod component;
-mod emit;
+pub(crate) mod emit;
 mod mask;
 mod masking;
 

@@ -7,6 +7,7 @@
 //! Seguro para SSR: nenhum componente toca `window`/`document` durante a renderização, e a
 //! lib não fixa `csr`/`hydrate`/`ssr` — quem decide é o app (ADR-0007).
 
+mod autocomplete;
 mod color;
 mod field;
 mod form;
@@ -20,7 +21,9 @@ mod util;
 
 pub mod components;
 pub mod position;
+pub mod search;
 
+pub use autocomplete::Autocomplete;
 pub use color::{Align, Color};
 pub use components::*;
 pub use field::{

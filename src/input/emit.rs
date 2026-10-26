@@ -56,7 +56,7 @@ pub(super) fn should_write(model: &str, val: &str) -> bool {
 
 /// Liga o [`EmitState`] ao sinal `value` e ao relógio. `Copy`: só guarda handles.
 #[derive(Clone, Copy)]
-pub(super) struct Emitter {
+pub(crate) struct Emitter {
     value: RwSignal<String>,
     /// Pausa em ms; `None` = sem `debounce` (escreve na hora).
     debounce: Option<u32>,
