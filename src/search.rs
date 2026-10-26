@@ -1,8 +1,8 @@
 //! Busca AICI (*accent-insensitive, case-insensitive*), o único lugar onde o `leptos-nebula`
 //! normaliza texto para filtrar (ADR-0013, `docs/decisions/0013-busca-aici-e-use-filter.md`).
 //!
-//! Sem DOM e sem Leptos, testado no host. Usado pelo [`Autocomplete`](crate::Autocomplete) e,
-//! na R-46, pelo `use_filter` do `Select`; é público para o app que filtra sozinho
+//! Sem DOM e sem Leptos, testado no host. Usado pelo [`Autocomplete`](crate::Autocomplete) e
+//! pelo `use_filter` do [`Select`](crate::Select) (R-46); é público para o app que filtra sozinho
 //! (`Autocomplete` com `filter=false`) usar **a mesma** regra.
 //!
 //! O contrato é em duas etapas, para não normalizar a lista a cada tecla:
@@ -110,6 +110,26 @@ mod tests {
         assert!(hit("Paçoca", "pacoca"));
         assert!(hit("ÜBER", "uber"));
         assert!(hit("uber", "ÜBER"));
+    }
+
+    #[test]
+    fn accented_needle_and_label_in_every_combination() {
+        // o caso do `Select` com `use_filter`: rótulo e agulha, com e sem acento, nas duas direções
+        for (label, needle) in [
+            ("Ação", "acao"),
+            ("Ação", "AÇÃO"),
+            ("acao", "Ação"),
+            ("ÜBER", "uber"),
+            ("uber", "ÜBER"),
+            ("Paçoca", "pacoca"),
+            ("PAÇOCA", "çoc"),
+            ("São Paulo", "SAO"),
+            ("São Paulo", "são p"),
+        ] {
+            assert!(hit(label, needle), "{label:?} deveria casar com {needle:?}");
+        }
+        assert!(!hit("Ação", "acai"));
+        assert!(!hit("Paçoca", "pacocas"));
     }
 
     #[test]

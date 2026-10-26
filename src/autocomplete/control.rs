@@ -13,24 +13,17 @@ use std::time::Duration;
 
 use leptos::leptos_dom::helpers::set_timeout;
 use leptos::{ev, html, portal::Portal, prelude::*};
-use wasm_bindgen::JsCast;
 
 use super::logic::{KeyAction, key_action, step, visible};
-use crate::components::popup::{
-    Listener, ListenerOpts, Overlay, Params, Phase, document, esc_is_top, esc_push, esc_remove,
-};
 use crate::field::FieldProps;
 use crate::input::emit::Emitter;
-use crate::position::{Horizontal, Position, Vertical};
+use crate::list_popup::{Hooks, ListPopup};
 use crate::search::normalize;
-use crate::util::{cls, next_id};
+use crate::util::next_id;
 use crate::{
     Color, Field, FieldAfter, FieldAppend, FieldBefore, FieldDesign, FieldError, FieldHint,
     FieldLoading, FieldPrepend, FieldValidation, Icon,
 };
-
-const BOTTOM_START: Position = Position::new(Vertical::Bottom, Horizontal::Start);
-const TOP_START: Position = Position::new(Vertical::Top, Horizontal::Start);
 
 /// `id` do controle quando o app não passa um (estável entre servidor e cliente).
 pub(super) fn generated_id() -> String {
@@ -157,7 +150,14 @@ pub(super) fn autocomplete_field(cfg: Config) -> impl IntoView {
     // A lista só aparece aberta e com sugestões.
     let shown = Memo::new(move |_| open.get() && visible.with(|v| !v.is_empty()));
     let ctl = Ctl {
-        o: Overlay::new(),
+        p: ListPopup::new(
+            "Autocomplete",
+            &id,
+            open,
+            shown.into(),
+            active,
+            Hooks::default(),
+        ),
         open,
         active,
         shown,
@@ -168,26 +168,15 @@ pub(super) fn autocomplete_field(cfg: Config) -> impl IntoView {
         value,
         disable,
         readonly,
-        params: StoredValue::new(Params {
-            anchor: BOTTOM_START,
-            self_: TOP_START,
-            offset: (0.0, 4.0),
-            fit: true,
-            cover: false,
-            max_height: None,
-            max_width: None,
-        }),
-        dismiss: StoredValue::new_local(Vec::new()),
-        mounted: StoredValue::new(false),
-        id: StoredValue::new(id.clone()),
     };
 
     Effect::new(move |_| {
-        if ctl.o.marker.get().is_some() {
-            ctl.mount();
+        if ctl.p.o.marker.get().is_some() {
+            // a âncora é a caixa do campo; clicar nela não alterna a lista (posiciona o cursor)
+            ctl.p.mount();
         }
     });
-    Effect::new(move |_| ctl.sync());
+    Effect::new(move |_| ctl.p.sync());
     // Campo desabilitado ou somente leitura não fica aberto.
     Effect::new(move |_| {
         if (disable.get() || readonly.get()) && open.get_untracked() {
@@ -205,10 +194,10 @@ pub(super) fn autocomplete_field(cfg: Config) -> impl IntoView {
     Effect::new(move |_| {
         let a = active.get();
         if shown.get_untracked() {
-            ctl.scroll_to(a);
+            ctl.p.scroll_to(a);
         }
     });
-    on_cleanup(move || ctl.cleanup());
+    on_cleanup(move || ctl.p.cleanup());
 
     // Botão de limpar (como o `clearable` do `Input`; o spinner toma o lugar dele).
     let has_value = Signal::derive(move || !inner.with(String::is_empty));
@@ -310,7 +299,8 @@ pub(super) fn autocomplete_field(cfg: Config) -> impl IntoView {
 /// Estado e ações do `Autocomplete`. `Copy`: só guarda handles.
 #[derive(Clone, Copy)]
 struct Ctl {
-    o: Overlay,
+    /// A máquina do popup (âncora, transição, `Esc`, clique fora, rolagem).
+    p: ListPopup,
     /// O usuário quer a lista (digitou, ou usou `↓`/`↑`); só aparece com sugestões (`shown`).
     open: RwSignal<bool>,
     active: RwSignal<Option<usize>>,
@@ -322,10 +312,6 @@ struct Ctl {
     value: RwSignal<String>,
     disable: Signal<bool>,
     readonly: Signal<bool>,
-    params: StoredValue<Params>,
-    dismiss: StoredValue<Vec<Listener>, LocalStorage>,
-    mounted: StoredValue<bool>,
-    id: StoredValue<String>,
 }
 
 /// O que o controle precisa além do `Ctl`.
@@ -341,72 +327,8 @@ struct Shared {
 }
 
 impl Ctl {
-    fn option_id(&self, i: usize) -> String {
-        format!("{}_opt_{i}", self.id.get_value())
-    }
-
     fn editable(&self) -> bool {
         !self.disable.get_untracked() && !self.readonly.get_untracked()
-    }
-
-    /// A âncora é a caixa do campo (`.lx-field-box`): o popup nasce embaixo dela, com a largura
-    /// dela. Diferente do `Select`, clicar no campo não alterna a lista (o clique posiciona o
-    /// cursor do texto).
-    fn mount(&self) {
-        if self.mounted.get_value() {
-            return;
-        }
-        let Some(marker) = self.o.marker.get_untracked() else {
-            return;
-        };
-        let Ok(Some(anchor)) = marker.closest(".lx-field-box") else {
-            return;
-        };
-        self.mounted.set_value(true);
-        self.o.set_anchor(anchor);
-    }
-
-    fn sync(&self) {
-        // `get` (e não `get_untracked`): roda de novo quando o `Portal` montar o popup
-        if self.o.el.get().is_none() {
-            return;
-        }
-        match (self.shown.get(), self.o.phase.get_untracked()) {
-            (true, Phase::Closed) => self.do_open(),
-            (true, Phase::Leaving) => {
-                self.o.revive();
-                self.arm_dismiss();
-            }
-            (false, Phase::Open) => self.leave(),
-            _ => {}
-        }
-    }
-
-    fn do_open(&self) {
-        let shown = self.o.open(&self.params.get_value(), || {});
-        if !shown {
-            leptos::logging::warn!("Autocomplete: sem âncora ou sem suporte à Popover API");
-            self.open.set(false);
-            return;
-        }
-        self.arm_dismiss();
-        self.scroll_to(self.active.get_untracked());
-    }
-
-    fn leave(&self) {
-        self.disarm_dismiss();
-        self.active.set(None);
-        self.o.leave(|| {});
-    }
-
-    fn scroll_to(&self, i: Option<usize>) {
-        let Some(i) = i else { return };
-        let Some(el) = document().and_then(|d| d.get_element_by_id(&self.option_id(i))) else {
-            return;
-        };
-        let opts = web_sys::ScrollIntoViewOptions::new();
-        opts.set_block(web_sys::ScrollLogicalPosition::Nearest);
-        el.scroll_into_view_with_scroll_into_view_options(&opts);
     }
 
     /// Preenche o texto com a sugestão `i` e fecha a lista; o foco continua no campo.
@@ -420,58 +342,6 @@ impl Ctl {
         self.value.set(text);
         self.open.set(false);
         self.active.set(None);
-    }
-
-    fn hover(&self, i: usize) {
-        if self.active.get_untracked() != Some(i) {
-            self.active.set(Some(i));
-        }
-    }
-
-    fn arm_dismiss(&self) {
-        self.disarm_dismiss();
-        let Some(doc) = document() else { return };
-        let t: &web_sys::EventTarget = doc.as_ref();
-        let this = *self;
-        let id = self.o.id;
-        esc_push(id);
-        let esc = Listener::on(t, "keydown", move |e| {
-            let Ok(e) = e.dyn_into::<web_sys::KeyboardEvent>() else {
-                return;
-            };
-            if e.key() == "Escape" && !e.default_prevented() && esc_is_top(id) {
-                // dentro de um `Dialog`, o mesmo `Esc` não pode fechar o diálogo também
-                e.prevent_default();
-                this.open.set(false);
-            }
-        });
-        let outside = Listener::new(
-            t,
-            "pointerdown",
-            ListenerOpts {
-                capture: true,
-                passive: true,
-            },
-            move |e| this.on_outside(&e),
-        );
-        self.dismiss.set_value(vec![esc, outside]);
-    }
-
-    fn disarm_dismiss(&self) {
-        self.dismiss.set_value(Vec::new());
-        esc_remove(self.o.id);
-    }
-
-    /// `pointerdown` fora do popup e do campo fecha.
-    fn on_outside(&self, e: &web_sys::Event) {
-        let Some(node) = e.target().and_then(|t| t.dyn_into::<web_sys::Node>().ok()) else {
-            return;
-        };
-        let in_popup = self.o.popup().is_some_and(|p| p.contains(Some(&node)));
-        let in_anchor = self.o.anchor().is_some_and(|a| a.contains(Some(&node)));
-        if !in_popup && !in_anchor && self.o.phase.get_untracked() == Phase::Open {
-            self.open.set(false);
-        }
     }
 
     fn on_input(&self, text: String) {
@@ -519,11 +389,6 @@ impl Ctl {
             // sem `preventDefault`: o `Enter` ainda envia o `Form`, o `Tab` ainda passa o foco
             KeyAction::Close => self.open.set(false),
         }
-    }
-
-    fn cleanup(&self) {
-        self.disarm_dismiss();
-        self.o.cleanup();
     }
 }
 
@@ -578,20 +443,10 @@ fn control_view(sh: Shared) -> impl IntoView {
         });
     }
 
-    let phase = ctl.o.phase;
     let popup = {
         let (id, list_id, list_label) = (id.clone(), list_id.clone(), list_label);
         move || {
-            let class = move || {
-                cls([
-                    "lx-menu",
-                    if phase.get() == Phase::Open {
-                        "lx-menu-open"
-                    } else {
-                        "lx-menu-enter"
-                    },
-                ])
-            };
+            let class = ctl.p.popup_class();
             let items = {
                 let id = id.clone();
                 move || {
@@ -607,7 +462,7 @@ fn control_view(sh: Shared) -> impl IntoView {
                                     class=move || option_class(active.get() == Some(i))
                                     aria-selected=move || (active.get() == Some(i)).to_string()
                                     on:click=move |_| ctl.pick(i)
-                                    on:mousemove=move |_| ctl.hover(i)
+                                    on:mousemove=move |_| ctl.p.hover(i)
                                 >
                                     <span class="lx-select-option-label">{text}</span>
                                 </li>
@@ -620,7 +475,7 @@ fn control_view(sh: Shared) -> impl IntoView {
             // `aria-activedescendant` vive nele)
             view! {
                 <div
-                    node_ref=ctl.o.el
+                    node_ref=ctl.p.o.el
                     popover="manual"
                     class=class
                     on:mousedown=move |e: ev::MouseEvent| e.prevent_default()
@@ -671,7 +526,7 @@ fn control_view(sh: Shared) -> impl IntoView {
                 open.set(false);
             }
         />
-        <span hidden=true node_ref=ctl.o.marker></span>
+        <span hidden=true node_ref=ctl.p.o.marker></span>
         <Portal>{popup()}</Portal>
     }
 }

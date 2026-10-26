@@ -75,6 +75,39 @@ pub(crate) fn initial_active(
     })
 }
 
+/// Navegação **dentro de um subconjunto visível** (`use_filter`): `visible` são os índices (na
+/// lista completa, em ordem) que o filtro deixou; `disabled`/`selected` continuam indexados pela
+/// lista completa. Devolve sempre um índice da lista completa — o id da opção não depende do
+/// filtro. Uma opção ativa que o filtro escondeu conta como "sem ativa".
+pub(crate) fn move_active_in(
+    visible: &[usize],
+    disabled: &[bool],
+    current: Option<usize>,
+    key: NavKey,
+) -> Option<usize> {
+    let sub = subset(visible, disabled);
+    let cur = current.and_then(|c| visible.iter().position(|&i| i == c));
+    move_active(&sub, cur, key).map(|k| visible[k])
+}
+
+/// [`initial_active`] dentro do subconjunto visível.
+pub(crate) fn initial_active_in(
+    visible: &[usize],
+    disabled: &[bool],
+    selected: &[bool],
+    from_end: bool,
+) -> Option<usize> {
+    let (d, s) = (subset(visible, disabled), subset(visible, selected));
+    initial_active(&d, &s, from_end).map(|k| visible[k])
+}
+
+fn subset(visible: &[usize], flags: &[bool]) -> Vec<bool> {
+    visible
+        .iter()
+        .map(|&i| flags.get(i).copied().unwrap_or(true))
+        .collect()
+}
+
 /// Janela do type-ahead, em ms: uma tecla depois disso começa uma busca nova.
 pub(crate) const TYPEAHEAD_WINDOW_MS: f64 = 700.0;
 
@@ -185,6 +218,7 @@ mod tests {
 
     const NO: bool = false;
     const DIS: bool = true;
+    const YES: bool = true;
 
     #[test]
     fn maps_navigation_keys() {
@@ -251,6 +285,52 @@ mod tests {
             Some(1)
         );
         assert_eq!(initial_active(&[], &[], false), None);
+    }
+
+    #[test]
+    fn filtered_navigation_walks_only_the_visible_options() {
+        // lista completa de 6; o filtro deixou 1, 3 e 4 (a 3 desabilitada)
+        let disabled = [NO, NO, NO, DIS, NO, NO];
+        let visible = [1, 3, 4];
+        let nav = |cur, key| move_active_in(&visible, &disabled, cur, key);
+        assert_eq!(nav(None, NavKey::Next), Some(1));
+        assert_eq!(nav(Some(1), NavKey::Next), Some(4)); // pula a 3 (desabilitada)
+        assert_eq!(nav(Some(4), NavKey::Next), Some(4)); // sem dar a volta
+        assert_eq!(nav(Some(4), NavKey::Prev), Some(1));
+        assert_eq!(nav(Some(1), NavKey::Prev), Some(1));
+        assert_eq!(nav(Some(1), NavKey::Last), Some(4));
+        assert_eq!(nav(Some(4), NavKey::First), Some(1));
+        // a ativa que o filtro escondeu (0) vale como "sem ativa"
+        assert_eq!(nav(Some(0), NavKey::Next), Some(1));
+        assert_eq!(nav(Some(0), NavKey::Prev), Some(4));
+    }
+
+    #[test]
+    fn filtered_navigation_with_no_visible_enabled_option() {
+        assert_eq!(move_active_in(&[], &[NO, NO], None, NavKey::Next), None);
+        assert_eq!(move_active_in(&[1], &[NO, DIS], None, NavKey::First), None);
+    }
+
+    #[test]
+    fn filtered_opening_prefers_the_visible_selection_then_the_first_enabled() {
+        let disabled = [NO, NO, DIS, NO];
+        let selected = [NO, NO, NO, YES];
+        // a escolhida (3) está visível
+        assert_eq!(
+            initial_active_in(&[1, 3], &disabled, &selected, false),
+            Some(3)
+        );
+        // a escolhida foi escondida: a primeira habilitada visível
+        assert_eq!(
+            initial_active_in(&[1, 2], &disabled, &selected, false),
+            Some(1)
+        );
+        assert_eq!(
+            initial_active_in(&[1, 2], &disabled, &selected, true),
+            Some(1)
+        );
+        // tudo escondido
+        assert_eq!(initial_active_in(&[], &disabled, &selected, false), None);
     }
 
     #[test]

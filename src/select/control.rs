@@ -16,23 +16,18 @@ use leptos::{ev, html, portal::Portal, prelude::*};
 use wasm_bindgen::JsCast;
 
 use super::nav::{
-    NavKey, TypeAhead, find_prefix, initial_active, join_labels, move_active, nav_key, toggle,
-    typeahead_char,
+    NavKey, TypeAhead, find_prefix, initial_active_in, join_labels, move_active_in, nav_key,
+    toggle, typeahead_char,
 };
-use crate::components::popup::{
-    Listener, ListenerOpts, Overlay, Params, Phase, document, esc_is_top, esc_push, esc_remove,
-    focus_quietly,
-};
+use crate::components::popup::{Listener, document, focus_quietly};
 use crate::field::FieldProps;
-use crate::position::{Horizontal, Position, Vertical};
-use crate::util::{cls, next_id};
+use crate::list_popup::{Hooks, ListPopup};
+use crate::search::{filter_indices, normalize};
+use crate::util::next_id;
 use crate::{
     Color, Field, FieldAfter, FieldAppend, FieldBefore, FieldDesign, FieldError, FieldHint,
     FieldLoading, FieldPrepend, FieldValidation, Icon, Options,
 };
-
-const BOTTOM_START: Position = Position::new(Vertical::Bottom, Horizontal::Start);
-const TOP_START: Position = Position::new(Vertical::Top, Horizontal::Start);
 
 /// `id` do controle quando o app não passa um (estável entre servidor e cliente).
 pub(super) fn generated_id() -> String {
@@ -86,6 +81,10 @@ pub(super) struct Config<T: Send + Sync + 'static> {
     pub clearable: bool,
     pub hide_dropdown_icon: bool,
     pub no_options_label: String,
+    /// Busca embutida no popup (ADR-0013); sem ela nada muda.
+    pub use_filter: bool,
+    pub filter_label: String,
+    pub no_results_label: String,
     pub autofocus: bool,
     pub validation: FieldValidation,
     pub on_popup_show: Option<Callback<()>>,
@@ -130,6 +129,9 @@ where
         clearable,
         hide_dropdown_icon,
         no_options_label,
+        use_filter,
+        filter_label,
+        no_results_label,
         autofocus,
         validation,
         on_popup_show,
@@ -178,6 +180,25 @@ where
             })
         }
     });
+    // Busca AICI (só com `use_filter`): o rótulo é normalizado **uma vez** por mudança das opções e
+    // a agulha uma vez por mudança do texto. `visible` são os índices na lista **completa** (o id
+    // da opção e a ativa nunca usam o índice filtrado).
+    let query = RwSignal::new(String::new());
+    let normalized = Memo::new(move |_| {
+        if use_filter {
+            labels.with(|l| l.iter().map(|s| normalize(s)).collect::<Vec<_>>())
+        } else {
+            Vec::new()
+        }
+    });
+    let needle = Memo::new(move |_| normalize(&query.get()));
+    let visible = Memo::new(move |_| {
+        if use_filter {
+            needle.with(|n| normalized.with(|l| filter_indices(l, n)))
+        } else {
+            (0..labels.with(Vec::len)).collect()
+        }
+    });
     // Escolher uma opção: o `Select` troca o valor; o `SelectMultiple` alterna.
     let choose = Callback::new({
         let options = options.clone();
@@ -220,42 +241,69 @@ where
     let input = NodeRef::<html::Input>::new();
     let open = RwSignal::new(false);
     let active = RwSignal::new(None::<usize>);
+    let typeahead = StoredValue::new(TypeAhead::default());
+    let search = NodeRef::<html::Input>::new();
     let ctl = Ctl {
-        o: Overlay::new(),
+        p: ListPopup::new(
+            "Select",
+            &id,
+            open,
+            open.into(),
+            active,
+            Hooks {
+                on_show: on_popup_show,
+                // a busca digitada não atravessa uma abertura (só depois da saída: durante ela a
+                // lista não pode "piscar" inteira)
+                on_hide: Some(Callback::new(move |()| {
+                    query.set(String::new());
+                    if let Some(cb) = on_popup_hide {
+                        cb.run(());
+                    }
+                })),
+                on_leave: Some(Callback::new(move |()| {
+                    typeahead.update_value(TypeAhead::reset);
+                    // o foco estava na caixa de busca: volta ao campo (`Esc`, `Enter`, clique)
+                    if use_filter
+                        && search.get_untracked().is_some_and(|s| has_focus(&s))
+                        && let Some(el) = input.get_untracked()
+                    {
+                        focus_quietly(&el);
+                    }
+                })),
+                // com busca, o foco entra na caixa assim que o popup fica visível
+                after_open: use_filter.then(|| {
+                    Callback::new(move |()| {
+                        if let Some(el) = search.get_untracked() {
+                            focus_quietly(&el);
+                        }
+                    })
+                }),
+            },
+        ),
         open,
         active,
         input,
         labels,
         disabled_flags,
         selected_flags,
+        visible,
+        query,
+        search,
+        use_filter,
         choose,
         multiple: model.multiple,
         disable,
         readonly,
-        params: StoredValue::new(Params {
-            anchor: BOTTOM_START,
-            self_: TOP_START,
-            offset: (0.0, 4.0),
-            fit: true,
-            cover: false,
-            max_height: None,
-            max_width: None,
-        }),
-        typeahead: StoredValue::new(TypeAhead::default()),
-        dismiss: StoredValue::new_local(Vec::new()),
+        typeahead,
         anchor_listeners: StoredValue::new_local(Vec::new()),
-        mounted: StoredValue::new(false),
-        id: StoredValue::new(id.clone()),
-        on_show: on_popup_show,
-        on_hide: on_popup_hide,
     };
 
     Effect::new(move |_| {
-        if ctl.o.marker.get().is_some() {
+        if ctl.p.o.marker.get().is_some() {
             ctl.mount();
         }
     });
-    Effect::new(move |_| ctl.sync());
+    Effect::new(move |_| ctl.p.sync());
     // Campo desabilitado ou somente leitura não fica aberto.
     Effect::new(move |_| {
         if (disable.get() || readonly.get()) && open.get_untracked() {
@@ -266,7 +314,7 @@ where
     Effect::new(move |_| {
         let a = active.get();
         if open.get_untracked() {
-            ctl.scroll_to(a);
+            ctl.p.scroll_to(a);
         }
     });
     on_cleanup(move || ctl.cleanup());
@@ -334,6 +382,8 @@ where
         text,
         autofocus,
         no_options_label,
+        filter_label,
+        no_results_label,
     };
     // O `view!` não repassa um `Option` de slot: monta-se as props do `Field` e atribui-se os
     // campos (todos `pub`).
@@ -373,25 +423,26 @@ where
 /// Estado e ações do `Select`. `Copy`: só guarda handles.
 #[derive(Clone, Copy)]
 struct Ctl {
-    o: Overlay,
+    /// A máquina do popup (âncora, transição, `Esc`, clique fora, rolagem).
+    p: ListPopup,
     open: RwSignal<bool>,
     active: RwSignal<Option<usize>>,
     input: NodeRef<html::Input>,
     labels: Memo<Vec<String>>,
     disabled_flags: Memo<Vec<bool>>,
     selected_flags: Memo<Vec<bool>>,
+    /// Índices (na lista completa) das opções que o filtro deixou; sem `use_filter`, todas.
+    visible: Memo<Vec<usize>>,
+    /// O texto da caixa de busca (vazio sem `use_filter`).
+    query: RwSignal<String>,
+    search: NodeRef<html::Input>,
+    use_filter: bool,
     choose: Callback<usize>,
     multiple: bool,
     disable: Signal<bool>,
     readonly: Signal<bool>,
-    params: StoredValue<Params>,
     typeahead: StoredValue<TypeAhead>,
-    dismiss: StoredValue<Vec<Listener>, LocalStorage>,
     anchor_listeners: StoredValue<Vec<Listener>, LocalStorage>,
-    mounted: StoredValue<bool>,
-    id: StoredValue<String>,
-    on_show: Option<Callback<()>>,
-    on_hide: Option<Callback<()>>,
 }
 
 /// O que o controle precisa além do `Ctl`.
@@ -403,6 +454,15 @@ struct Shared {
     text: Signal<String>,
     autofocus: bool,
     no_options_label: String,
+    filter_label: String,
+    no_results_label: String,
+}
+
+/// O elemento é o que tem o foco do documento?
+fn has_focus(el: &web_sys::HtmlElement) -> bool {
+    document()
+        .and_then(|d| d.active_element())
+        .is_some_and(|a| a.is_same_node(Some(el)))
 }
 
 fn now_ms() -> f64 {
@@ -410,28 +470,16 @@ fn now_ms() -> f64 {
 }
 
 impl Ctl {
-    fn option_id(&self, i: usize) -> String {
-        format!("{}_opt_{i}", self.id.get_value())
-    }
-
     fn editable(&self) -> bool {
         !self.disable.get_untracked() && !self.readonly.get_untracked()
     }
 
-    /// A âncora é a caixa do campo (`.lx-field-box`): o popup nasce embaixo dela, com a largura
-    /// dela. Um clique em qualquer ponto da caixa (menos num botão) abre e fecha.
+    /// Liga a âncora (a caixa do campo): o popup nasce embaixo dela, com a largura dela. Um
+    /// clique em qualquer ponto da caixa (menos num botão) abre e fecha.
     fn mount(&self) {
-        if self.mounted.get_value() {
-            return;
-        }
-        let Some(marker) = self.o.marker.get_untracked() else {
+        let Some(anchor) = self.p.mount() else {
             return;
         };
-        let Ok(Some(anchor)) = marker.closest(".lx-field-box") else {
-            return;
-        };
-        self.mounted.set_value(true);
-        self.o.set_anchor(anchor.clone());
         let t: &web_sys::EventTarget = anchor.as_ref();
         let this = *self;
         // Sem isto, tocar na seta (que não é focável) tiraria o foco do campo (o `blur` fecharia
@@ -449,60 +497,21 @@ impl Ctl {
         self.anchor_listeners.set_value(vec![down, click]);
     }
 
-    fn sync(&self) {
-        // `get` (e não `get_untracked`): roda de novo quando o `Portal` montar o popup
-        if self.o.el.get().is_none() {
-            return;
-        }
-        match (self.open.get(), self.o.phase.get_untracked()) {
-            (true, Phase::Closed) => self.do_open(),
-            (true, Phase::Leaving) => {
-                self.o.revive();
-                self.arm_dismiss();
-            }
-            (false, Phase::Open) => self.leave(),
-            _ => {}
-        }
-    }
-
-    fn do_open(&self) {
-        let on_show = self.on_show;
-        let shown = self.o.open(&self.params.get_value(), move || {
-            if let Some(cb) = on_show {
-                cb.run(());
-            }
-        });
-        if !shown {
-            leptos::logging::warn!("Select: sem âncora ou sem suporte à Popover API");
-            self.open.set(false);
-            return;
-        }
-        self.arm_dismiss();
-        // o popup acabou de ficar visível: a opção ativa já pode ser rolada para a vista
-        self.scroll_to(self.active.get_untracked());
-    }
-
-    fn leave(&self) {
-        self.disarm_dismiss();
-        self.active.set(None);
-        self.typeahead.update_value(TypeAhead::reset);
-        let on_hide = self.on_hide;
-        self.o.leave(move || {
-            if let Some(cb) = on_hide {
-                cb.run(());
-            }
-        });
-    }
-
     /// Abre com a opção `initial` ativa (ou a da seleção / a primeira habilitada).
     fn show(&self, initial: Option<usize>, from_end: bool) {
         if !self.editable() {
             return;
         }
+        // abrir recomeça a busca (também se a saída anterior ainda não acabou)
+        if self.use_filter {
+            self.query.set(String::new());
+        }
         let a = initial.or_else(|| {
-            self.disabled_flags.with_untracked(|d| {
-                self.selected_flags
-                    .with_untracked(|s| initial_active(d, s, from_end))
+            self.visible.with_untracked(|v| {
+                self.disabled_flags.with_untracked(|d| {
+                    self.selected_flags
+                        .with_untracked(|s| initial_active_in(v, d, s, from_end))
+                })
             })
         });
         self.active.set(a);
@@ -519,16 +528,6 @@ impl Ctl {
         } else {
             self.show(None, false);
         }
-    }
-
-    fn scroll_to(&self, i: Option<usize>) {
-        let Some(i) = i else { return };
-        let Some(el) = document().and_then(|d| d.get_element_by_id(&self.option_id(i))) else {
-            return;
-        };
-        let opts = web_sys::ScrollIntoViewOptions::new();
-        opts.set_block(web_sys::ScrollLogicalPosition::Nearest);
-        el.scroll_into_view_with_scroll_into_view_options(&opts);
     }
 
     /// Escolhe a opção `i`. No `Select` fecha; no `SelectMultiple` a lista continua aberta.
@@ -550,54 +549,8 @@ impl Ctl {
         let off = self
             .disabled_flags
             .with_untracked(|d| d.get(i).copied().unwrap_or(true));
-        if !off && self.active.get_untracked() != Some(i) {
-            self.active.set(Some(i));
-        }
-    }
-
-    fn arm_dismiss(&self) {
-        self.disarm_dismiss();
-        let Some(doc) = document() else { return };
-        let t: &web_sys::EventTarget = doc.as_ref();
-        let this = *self;
-        let id = self.o.id;
-        esc_push(id);
-        let esc = Listener::on(t, "keydown", move |e| {
-            let Ok(e) = e.dyn_into::<web_sys::KeyboardEvent>() else {
-                return;
-            };
-            if e.key() == "Escape" && !e.default_prevented() && esc_is_top(id) {
-                // dentro de um `Dialog`, o mesmo `Esc` não pode fechar o diálogo também
-                e.prevent_default();
-                this.open.set(false);
-            }
-        });
-        let outside = Listener::new(
-            t,
-            "pointerdown",
-            ListenerOpts {
-                capture: true,
-                passive: true,
-            },
-            move |e| this.on_outside(&e),
-        );
-        self.dismiss.set_value(vec![esc, outside]);
-    }
-
-    fn disarm_dismiss(&self) {
-        self.dismiss.set_value(Vec::new());
-        esc_remove(self.o.id);
-    }
-
-    /// `pointerdown` fora do popup e do campo fecha (o clique dentro do campo alterna sozinho).
-    fn on_outside(&self, e: &web_sys::Event) {
-        let Some(node) = e.target().and_then(|t| t.dyn_into::<web_sys::Node>().ok()) else {
-            return;
-        };
-        let in_popup = self.o.popup().is_some_and(|p| p.contains(Some(&node)));
-        let in_anchor = self.o.anchor().is_some_and(|a| a.contains(Some(&node)));
-        if !in_popup && !in_anchor && self.o.phase.get_untracked() == Phase::Open {
-            self.open.set(false);
+        if !off {
+            self.p.hover(i);
         }
     }
 
@@ -630,16 +583,71 @@ impl Ctl {
             if is_open {
                 self.open.set(false);
             }
+        } else if self.use_filter {
+            // com a caixa de busca, o type-ahead não se aplica (as teclas vão para a caixa)
         } else if let Some(c) = typeahead_char(&key, searching) {
             e.prevent_default();
             self.type_ahead(c, is_open);
         }
     }
 
+    /// Digitou na caixa de busca: filtra e a ativa passa à primeira habilitada do resultado.
+    fn on_search_input(&self, text: String) {
+        self.query.set(text);
+        let first = self.visible.with_untracked(|v| {
+            self.disabled_flags
+                .with_untracked(|d| move_active_in(v, d, None, NavKey::First))
+        });
+        self.active.set(first);
+    }
+
+    /// Teclado na caixa de busca: setas/`Home`/`End` navegam, `Enter` escolhe, `Tab` fecha sem
+    /// escolher (o foco volta ao campo, não segue para o que estiver depois do popup). `Esc` é do
+    /// ouvinte do `document` (`ListPopup`), como no resto.
+    fn on_search_keydown(&self, e: &ev::KeyboardEvent) {
+        // `Enter` que confirma uma composição (IME) não escolhe nada
+        if e.is_composing() || e.ctrl_key() || e.meta_key() || e.alt_key() {
+            return;
+        }
+        let key = e.key();
+        if let Some(nav) = nav_key(&key) {
+            e.prevent_default();
+            self.move_to(nav);
+        } else if key == "Enter" {
+            e.prevent_default();
+            if let Some(i) = self.active.get_untracked() {
+                self.pick(i);
+            }
+        } else if key == "Tab" {
+            e.prevent_default();
+            self.open.set(false);
+            if let Some(el) = self.input.get_untracked() {
+                focus_quietly(&el);
+            }
+        }
+    }
+
+    /// O foco saiu do campo ou da caixa: para onde foi? Dentro do controle (campo ↔ caixa ↔
+    /// popup) a lista fica; fora (ou a janela perdeu o foco), fecha.
+    fn on_focus_leave(&self, to: Option<web_sys::EventTarget>) {
+        if self.use_filter
+            && let Some(node) = to.and_then(|t| t.dyn_into::<web_sys::Node>().ok())
+            && (self.p.in_popup(&node)
+                || self
+                    .input
+                    .get_untracked()
+                    .is_some_and(|i| i.is_same_node(Some(&node))))
+        {
+            return;
+        }
+        self.open.set(false);
+    }
+
     fn move_to(&self, nav: NavKey) {
-        let next = self
-            .disabled_flags
-            .with_untracked(|d| move_active(d, self.active.get_untracked(), nav));
+        let next = self.visible.with_untracked(|v| {
+            self.disabled_flags
+                .with_untracked(|d| move_active_in(v, d, self.active.get_untracked(), nav))
+        });
         if next.is_some() {
             self.active.set(next);
         }
@@ -671,9 +679,8 @@ impl Ctl {
     }
 
     fn cleanup(&self) {
-        self.disarm_dismiss();
         self.anchor_listeners.set_value(Vec::new());
-        self.o.cleanup();
+        self.p.cleanup();
     }
 }
 
@@ -708,6 +715,8 @@ fn control_view(sh: Shared) -> impl IntoView {
         text,
         autofocus,
         no_options_label,
+        filter_label,
+        no_results_label,
     } = sh;
     let ctx = crate::use_field_context().expect("o controle do Select vai dentro de um <Field>");
     let class = format!("{} lx-select-input", ctx.control_class);
@@ -733,6 +742,24 @@ fn control_view(sh: Shared) -> impl IntoView {
             active.get().map(|i| format!("{id}_opt_{i}"))
         }
     };
+    let use_filter = ctl.use_filter;
+    // com a caixa de busca o foco mora nela: a opção ativa é dela (`aria-activedescendant`), não
+    // do campo, e só conta se o filtro a deixou visível
+    let search_active_id = {
+        let id = id.clone();
+        move || {
+            if !open.get() {
+                return None;
+            }
+            let i = active.get()?;
+            ctl.visible
+                .with(|v| v.contains(&i))
+                .then(|| format!("{id}_opt_{i}"))
+        }
+    };
+    let field_active_id = move || {
+        if use_filter { None } else { active_id() }
+    };
     let data_autofocus = autofocus.then_some("");
     let mount_focus = ctl.input;
     if autofocus {
@@ -744,30 +771,27 @@ fn control_view(sh: Shared) -> impl IntoView {
     }
 
     let multiple = ctl.multiple;
-    let (labels, disabled_flags, selected_flags) =
-        (ctl.labels, ctl.disabled_flags, ctl.selected_flags);
-    let phase = ctl.o.phase;
+    let (labels, disabled_flags, selected_flags, visible) = (
+        ctl.labels,
+        ctl.disabled_flags,
+        ctl.selected_flags,
+        ctl.visible,
+    );
     let popup = {
         let (id, list_id, list_label) = (id.clone(), list_id.clone(), aria_label.clone());
         move || {
-            let class = move || {
-                cls([
-                    "lx-menu",
-                    if phase.get() == Phase::Open {
-                        "lx-menu-open"
-                    } else {
-                        "lx-menu-enter"
-                    },
-                ])
-            };
-            let empty = move || labels.with(Vec::is_empty);
+            let class = ctl.p.popup_class();
+            // sem opções (ou, com busca, sem resultado): sem `role="listbox"` e com a mensagem
+            let empty = move || visible.with(Vec::is_empty);
             let options = {
                 let id = id.clone();
                 move || {
-                    labels
+                    // só as opções que o filtro deixou, mas com o índice (e o id) da lista completa
+                    let all = labels.get();
+                    visible
                         .get()
                         .into_iter()
-                        .enumerate()
+                        .filter_map(|i| all.get(i).map(|label| (i, label.clone())))
                         .map(|(i, label)| {
                             let off = move || disabled_flags.with(|d| d.get(i).copied().unwrap_or(false));
                             let on = move || selected_flags.with(|s| s.get(i).copied().unwrap_or(false));
@@ -799,15 +823,85 @@ fn control_view(sh: Shared) -> impl IntoView {
                 }
             };
             let no_options = no_options_label.clone();
-            // `mousedown` com `preventDefault`: clicar na lista não tira o foco do campo (o
-            // `aria-activedescendant` vive nele)
+            let no_options_msg = no_options_label.clone();
+            let no_results = no_results_label.clone();
+            let filter_label = filter_label.clone();
+            let list_id_search = list_id.clone();
+            let search_active_id = search_active_id.clone();
+            // `mousedown` com `preventDefault`: clicar na lista não tira o foco de onde ele está
+            // (no campo, ou na caixa de busca): só a própria caixa de busca precisa dele, para
+            // posicionar o cursor
+            let on_mousedown = move |e: ev::MouseEvent| {
+                let in_search = e
+                    .target()
+                    .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+                    .is_some_and(|el| el.closest("input").ok().flatten().is_some());
+                if !in_search {
+                    e.prevent_default();
+                }
+            };
+            // Com busca: a caixa no topo e uma região `aria-live` (sempre no DOM, para o leitor de
+            // tela anunciar o texto quando ele aparece) para "sem opções"/"sem resultados".
+            let filter_box = use_filter.then(|| {
+                view! {
+                    <div class="lx-select-filter-box">
+                        <input
+                            node_ref=ctl.search
+                            type="search"
+                            role="searchbox"
+                            class="lx-select-filter"
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            aria-label=filter_label
+                            aria-controls=list_id_search
+                            aria-activedescendant=search_active_id
+                            prop:value=move || ctl.query.get()
+                            on:input=move |e| ctl.on_search_input(event_target_value(&e))
+                            on:keydown=move |e| ctl.on_search_keydown(&e)
+                            on:blur=move |e: ev::FocusEvent| ctl.on_focus_leave(e.related_target())
+                        />
+                    </div>
+                }
+            });
+            let message = move || {
+                if labels.with(Vec::is_empty) {
+                    Some(no_options_msg.clone())
+                } else if empty() {
+                    Some(no_results.clone())
+                } else {
+                    None
+                }
+            };
+            let status = if use_filter {
+                view! {
+                    <div aria-live="polite" aria-atomic="true" data-lx-select-status="">
+                        {move || {
+                            message()
+                                .map(|m| view! { <div class="lx-select-empty">{m}</div> })
+                        }}
+                    </div>
+                }
+                .into_any()
+            } else {
+                view! {
+                    {move || {
+                        empty()
+                            .then(|| {
+                                view! { <div class="lx-select-empty">{no_options.clone()}</div> }
+                            })
+                    }}
+                }
+                .into_any()
+            };
             view! {
                 <div
-                    node_ref=ctl.o.el
+                    node_ref=ctl.p.o.el
                     popover="manual"
                     class=class
-                    on:mousedown=move |e: ev::MouseEvent| e.prevent_default()
+                    on:mousedown=on_mousedown
                 >
+                    {filter_box}
                     <ul
                         id=list_id.clone()
                         role=move || (!empty()).then_some("listbox")
@@ -817,12 +911,7 @@ fn control_view(sh: Shared) -> impl IntoView {
                     >
                         {options}
                     </ul>
-                    {move || {
-                        empty()
-                            .then(|| {
-                                view! { <div class="lx-select-empty">{no_options.clone()}</div> }
-                            })
-                    }}
+                    {status}
                 </div>
             }
         }
@@ -843,7 +932,7 @@ fn control_view(sh: Shared) -> impl IntoView {
             aria-haspopup="listbox"
             aria-expanded=move || open.get().to_string()
             aria-controls=list_id
-            aria-activedescendant=active_id
+            aria-activedescendant=field_active_id
             aria-label=aria_label.clone()
             aria-readonly=move || readonly.get().to_string()
             aria-invalid=move || has_error.get().then_some("true")
@@ -851,10 +940,11 @@ fn control_view(sh: Shared) -> impl IntoView {
             value=text.get_untracked()
             prop:value=move || text.get()
             on:keydown=move |e| ctl.on_keydown(&e)
-            // o popup nunca recebe o foco: sair do campo (programaticamente, ou pela janela) fecha
-            on:blur=move |_| open.set(false)
+            // sem busca o popup nunca recebe o foco: sair do campo (programaticamente, ou pela
+            // janela) fecha. Com busca, ir para a caixa não fecha (`on_focus_leave`).
+            on:blur=move |e: ev::FocusEvent| ctl.on_focus_leave(e.related_target())
         />
-        <span hidden=true node_ref=ctl.o.marker></span>
+        <span hidden=true node_ref=ctl.p.o.marker></span>
         <Portal>{popup()}</Portal>
     }
 }

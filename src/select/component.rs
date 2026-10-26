@@ -31,7 +31,7 @@ use crate::{
 /// `role="option"` com `aria-selected` e `aria-disabled`. Dê um nome ao campo com `label` ou
 /// `aria_label`.
 ///
-/// Ainda não: `use_input`/filtro, `use_chips`, `new_value_mode`, rolagem virtual,
+/// Ainda não: `use_input` (o `use_filter` é a busca **embutida**, ADR-0013), `use_chips`, `new_value_mode`, rolagem virtual,
 /// `options_dense`, `options_cover`, `menu_anchor`/`menu_self`/`menu_offset`, `behavior`
 /// (diálogo no celular), `hide_selected`, `max_values`, os slots `option`/`selected`/`no_option`,
 /// `option_value`/`option_label`/`option_disable` (use `SelectOption`), `name` (nenhum valor vai
@@ -62,6 +62,17 @@ pub fn Select<T>(
     /// Texto da lista sem opções.
     #[prop(optional, into)]
     no_options_label: Option<String>,
+    /// Caixa de busca no topo do popup (busca AICI pelo rótulo: sem diferenciar maiúsculas nem
+    /// acentos, "contém"). O foco entra na caixa ao abrir; `Enter` escolhe, `Esc`/`Tab` fecham e o
+    /// foco volta ao campo. Sem ela, nada muda.
+    #[prop(optional)]
+    use_filter: bool,
+    /// `aria-label` da caixa de busca (padrão "Filtrar opções").
+    #[prop(optional, into)]
+    filter_label: Option<String>,
+    /// Texto quando a busca não acha nada (padrão "Nenhum resultado"; `aria-live="polite"`).
+    #[prop(optional, into)]
+    no_results_label: Option<String>,
     /// Foca o campo ao montar e o marca com `data-autofocus` (o `autofocus` do `Form`).
     #[prop(optional)]
     autofocus: bool,
@@ -151,6 +162,9 @@ where
         clearable,
         hide_dropdown_icon,
         no_options_label: no_options_label.unwrap_or_else(|| "Sem opções".to_string()),
+        use_filter,
+        filter_label: filter_label.unwrap_or_else(|| "Filtrar opções".to_string()),
+        no_results_label: no_results_label.unwrap_or_else(|| "Nenhum resultado".to_string()),
         autofocus,
         validation,
         on_popup_show,
@@ -215,6 +229,17 @@ pub fn SelectMultiple<T>(
     /// Texto da lista sem opções.
     #[prop(optional, into)]
     no_options_label: Option<String>,
+    /// Caixa de busca no topo do popup (busca AICI pelo rótulo: sem diferenciar maiúsculas nem
+    /// acentos, "contém"). O foco entra na caixa ao abrir; `Enter` escolhe, `Esc`/`Tab` fecham e o
+    /// foco volta ao campo. Sem ela, nada muda.
+    #[prop(optional)]
+    use_filter: bool,
+    /// `aria-label` da caixa de busca (padrão "Filtrar opções").
+    #[prop(optional, into)]
+    filter_label: Option<String>,
+    /// Texto quando a busca não acha nada (padrão "Nenhum resultado"; `aria-live="polite"`).
+    #[prop(optional, into)]
+    no_results_label: Option<String>,
     /// Foca o campo ao montar e o marca com `data-autofocus`.
     #[prop(optional)]
     autofocus: bool,
@@ -300,6 +325,9 @@ where
         clearable,
         hide_dropdown_icon,
         no_options_label: no_options_label.unwrap_or_else(|| "Sem opções".to_string()),
+        use_filter,
+        filter_label: filter_label.unwrap_or_else(|| "Filtrar opções".to_string()),
+        no_results_label: no_results_label.unwrap_or_else(|| "Nenhum resultado".to_string()),
         autofocus,
         validation,
         on_popup_show,
