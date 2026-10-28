@@ -11,6 +11,9 @@
 //!    digitado;
 //! 2. [`matches`] (ou [`filter_indices`]) compara os já normalizados.
 //!
+//! Para destacar o trecho achado no texto **original**, [`normalize_with_map`] devolve também a
+//! posição de origem de cada byte do normalizado (usado pela busca do `leptos-press`).
+//!
 //! ```
 //! use leptos_nebula::search::{filter_indices, matches, normalize};
 //!
@@ -39,6 +42,44 @@ pub fn normalize(text: &str) -> String {
         .filter(|c| !is_combining_mark(*c))
         .flat_map(char::to_lowercase)
         .collect()
+}
+
+/// Como [`normalize`], mas devolve também onde cada byte do texto normalizado veio do original
+/// — para destacar, no texto **original**, um trecho achado no normalizado.
+///
+/// O texto devolvido é **igual** ao de [`normalize`]. O mapa tem `normalizado.len() + 1`
+/// posições, todas em **bytes**: `map[i]` é o início, no original, do caractere que gerou o byte
+/// `i` do normalizado (todos os bytes vindos do mesmo caractere apontam para o mesmo início), e
+/// `map[normalizado.len()] == text.len()`. É não decrescente. Um caractere que some (marca
+/// combinante solta) não aparece no mapa; um que muda de tamanho (`ã` → `a`, `ẞ` → `ß`,
+/// `K` Kelvin → `k`) aponta todos os seus bytes para o mesmo início.
+///
+/// Trecho `[s, e)` do normalizado (em limites de caractere) → original: começa em `map[s]`;
+/// termina no primeiro `map[j]`, `j >= e`, maior que `map[e - 1]` (em geral o próprio `map[e]`).
+///
+/// ```
+/// use leptos_nebula::search::normalize_with_map;
+/// let (norm, map) = normalize_with_map("São Paulo");
+/// assert_eq!(norm, "sao paulo");
+/// let s = norm.find("sao").unwrap();
+/// assert_eq!(&"São Paulo"[map[s]..map[s + 3]], "São");
+/// ```
+pub fn normalize_with_map(text: &str) -> (String, Vec<usize>) {
+    let mut norm = String::with_capacity(text.len());
+    let mut map = Vec::with_capacity(text.len() + 1);
+    // Caractere a caractere: as marcas combinantes são removidas, então a reordenação canônica
+    // do NFD (que só move marcas) não muda o resultado — é o mesmo texto de `normalize`.
+    for (start, c) in text.char_indices() {
+        let before = norm.len();
+        norm.extend(
+            c.nfd()
+                .filter(|m| !is_combining_mark(*m))
+                .flat_map(char::to_lowercase),
+        );
+        map.resize(map.len() + (norm.len() - before), start);
+    }
+    map.push(text.len());
+    (norm, map)
 }
 
 /// O rótulo normalizado **contém** a agulha normalizada. Agulha vazia aceita tudo.
@@ -138,6 +179,101 @@ mod tests {
         assert!(hit("", ""));
         assert!(!hit("São Paulo", "rio"));
         assert!(!hit("", "a"));
+    }
+
+    /// Original do trecho `[s, e)` do normalizado, pela regra do doc comment.
+    fn original<'a>(text: &'a str, map: &[usize], s: usize, e: usize) -> &'a str {
+        let end = map[e..]
+            .iter()
+            .copied()
+            .find(|&o| o > map[e - 1])
+            .unwrap_or(text.len());
+        &text[map[s]..end]
+    }
+
+    #[test]
+    fn map_text_is_the_same_as_normalize() {
+        for t in [
+            "",
+            "São Paulo",
+            "Ação",
+            "ÜBER",
+            "Paçoca",
+            "Straße",
+            "STRAẞE",
+            "İstanbul",
+            "\u{212A}elvin",
+            "cafe\u{301}",
+            "\u{301}solta",
+            "a^b `c´ ¨",
+            "key_as_value",
+        ] {
+            let (norm, map) = normalize_with_map(t);
+            assert_eq!(norm, normalize(t), "{t:?}");
+            assert_eq!(map.len(), norm.len() + 1, "{t:?}");
+            assert_eq!(map.last(), Some(&t.len()), "{t:?}");
+            assert!(map.windows(2).all(|par| par[0] <= par[1]), "{t:?}");
+        }
+    }
+
+    #[test]
+    fn map_points_back_to_accented_letters() {
+        let t = "Em São Paulo";
+        let (norm, map) = normalize_with_map(t);
+        assert_eq!(norm, "em sao paulo");
+        assert_eq!(map[..7], [0, 1, 2, 3, 4, 6, 7]);
+        let s = norm.find("sao").unwrap();
+        assert_eq!(original(t, &map, s, s + 3), "São");
+        // termina no meio da palavra, logo depois do "ã"
+        assert_eq!(original(t, &map, s, s + 2), "Sã");
+    }
+
+    #[test]
+    fn map_with_cedilla_and_tilde() {
+        let t = "Ação!";
+        let (norm, map) = normalize_with_map(t);
+        assert_eq!(norm, "acao!");
+        assert_eq!(map, [0, 1, 3, 5, 6, 7]);
+        assert_eq!(original(t, &map, 1, 3), "çã");
+        assert_eq!(original(t, &map, 0, 4), "Ação");
+    }
+
+    #[test]
+    fn map_with_letters_that_change_size() {
+        // ß fica ß (2 bytes); ẞ (3 bytes) vira ß (2 bytes); İ (2 bytes) vira i (1 byte);
+        // o sinal Kelvin (3 bytes) vira k (1 byte).
+        let t = "STRAẞE";
+        let (norm, map) = normalize_with_map(t);
+        assert_eq!(norm, "straße");
+        let s = norm.find("ße").unwrap();
+        assert_eq!(original(t, &map, s, s + "ß".len()), "ẞ");
+        assert_eq!(original(t, &map, s, norm.len()), "ẞE");
+
+        let t = "Straße";
+        let (norm, map) = normalize_with_map(t);
+        assert_eq!(norm, "straße");
+        assert_eq!(original(t, &map, 4, 6), "ß");
+
+        let t = "İstanbul";
+        let (norm, map) = normalize_with_map(t);
+        assert_eq!(norm, "istanbul");
+        assert_eq!(original(t, &map, 0, 3), "İst");
+
+        let t = "1 \u{212A}m";
+        let (norm, map) = normalize_with_map(t);
+        assert_eq!(norm, "1 km");
+        assert_eq!(original(t, &map, 2, 4), "\u{212A}m");
+    }
+
+    #[test]
+    fn map_skips_loose_combining_marks() {
+        // "e" + acento combinante: os dois bytes do acento somem; o "e" aponta para o início.
+        let t = "cafe\u{301} bom";
+        let (norm, map) = normalize_with_map(t);
+        assert_eq!(norm, "cafe bom");
+        let s = norm.find("cafe").unwrap();
+        assert_eq!(original(t, &map, s, s + 4), "cafe\u{301}");
+        assert_eq!(original(t, &map, 5, 8), "bom");
     }
 
     #[test]
