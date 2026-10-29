@@ -135,7 +135,7 @@ fn generated_id() -> String {
 ///
 /// **Máscara** (`mask`, `fill_mask`, `reverse_fill_mask`, `unmasked_value`, só em tipos de texto):
 /// o `value` guarda o texto **mascarado** (como o `v-model` do Quasar) ou, com `unmasked_value`,
-/// só os dados; as `rules` e o `Form` veem o `value`. Ver `docs/ui/forms.md#mascara`.
+/// só os dados; as `rules` e o `Form` veem o `value`. Ver `docs/ui/forms.md#mask`.
 ///
 /// **`debounce`** (ms): o texto exibido acompanha cada tecla, mas o `value` só é escrito depois
 /// da pausa; blur, `change`, Enter e o descarte do campo o entregam na hora, e `clearable` o

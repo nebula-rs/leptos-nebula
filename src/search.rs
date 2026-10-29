@@ -1,5 +1,5 @@
 //! Busca AICI (*accent-insensitive, case-insensitive*), o único lugar onde o `leptos-nebula`
-//! normaliza texto para filtrar (ADR-0013, `docs/decisions/0013-busca-aici-e-use-filter.md`).
+//! normaliza texto para filtrar (ADR-0013, `docs/decisions/0013-aici-search-and-use-filter.md`).
 //!
 //! Sem DOM e sem Leptos, testado no host. Usado pelo [`Autocomplete`](crate::Autocomplete) e
 //! pelo `use_filter` do [`Select`](crate::Select) (R-46); é público para o app que filtra sozinho

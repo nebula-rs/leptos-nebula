@@ -1,6 +1,6 @@
 //! Máscara do `Input` — porta pura (sem DOM) do `use-mask.js` do Quasar (R-17).
 //!
-//! Especificação: `docs/ui/forms.md#mascara`. O [`MaskState`] reproduz o `useMask`: o texto
+//! Especificação: `docs/ui/forms.md#mask`. O [`MaskState`] reproduz o `useMask`: o texto
 //! exibido (`inner`), o texto sem máscara, o preenchimento (`fill_mask`/`reverse_fill_mask`) e o
 //! cálculo da posição do cursor. O controle nativo entra pelo trait [`MaskControl`] (valor,
 //! seleção e foco, em **caracteres**, não em unidades UTF-16): o componente implementa o trait

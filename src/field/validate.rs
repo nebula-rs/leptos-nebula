@@ -5,7 +5,7 @@
 //! sobrescreve a nova) e `lazy_rules`. O hook [`use_validate`](super::use_validate) só liga
 //! isto aos sinais do Leptos.
 //!
-//! Especificação: `docs/ui/forms.md#validacao`.
+//! Especificação: `docs/ui/forms.md#validation`.
 
 use std::rc::Rc;
 

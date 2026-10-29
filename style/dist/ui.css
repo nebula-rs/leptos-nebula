@@ -50,7 +50,7 @@
  *
  * Contrato de tokens (outros temas — `material`, `glass` — redefinem os mesmos nomes):
  * papéis de cor com pares `on-*`, níveis de superfície, estados, elevação/efeitos,
- * escala de raios, tipografia e movimento. Ver docs/ui/overview.md#temas.
+ * escala de raios, tipografia e movimento. Ver docs/ui/overview.md#themes.
  *
  * O bloco escuro fica entre os marcadores `dark:start`/`dark:end`: o build (scripts/build-css.mjs)
  * o repete dentro de `@media (prefers-color-scheme: dark)` para quando `data-mode` estiver ausente.

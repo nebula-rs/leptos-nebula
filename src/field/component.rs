@@ -111,7 +111,7 @@ const FOCUSABLE: &str =
 /// `<input>` nativo, depois o `Input`) entra como `children`; o `has_value` diz ao `Field` se o
 /// controle tem valor (quem guarda o valor é o controle).
 ///
-/// O label é definido pelo tema ([ADR-0010](../../../docs/decisions/0010-field-label-pelo-tema.md)):
+/// O label é definido pelo tema ([ADR-0010](../../../docs/decisions/0010-field-label-by-theme.md)):
 /// um único elemento `<label for=…>` com dois estados (repouso × flutuando); no scandi fica fixo
 /// acima da caixa. O padrão de `design` é `Outlined` (no Quasar, `standard`).
 ///
