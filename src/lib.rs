@@ -13,7 +13,9 @@ mod field;
 mod form;
 mod input;
 mod list_popup;
+mod option_group;
 mod options;
+mod root;
 mod select;
 mod styles;
 mod table;
@@ -21,6 +23,7 @@ mod theme;
 mod util;
 
 pub mod components;
+pub mod plugins;
 pub mod position;
 pub mod search;
 
@@ -37,8 +40,17 @@ pub use form::{
     use_form_child,
 };
 pub use input::{FillMask, Input, InputHandle, InputType};
+pub use option_group::{OptionGroup, OptionGroupMultiple, OptionGroupType};
 pub use options::{HasKey, HasLabel, NoKey, NoLabel, ObjectOptions, Opt, Options};
+pub use plugins::{
+    DialogBtn, DialogBtnProps, DialogFocus, DialogForm, DialogFormParts, DialogHandle,
+    DialogOptionGroup, DialogOptionGroupMultiple, DialogOptions, DialogPlugin, DialogPrompt,
+    DialogSetup, Dismissed, NotifyAction, NotifyGroup, NotifyHandle, NotifyOptions, NotifyPlugin,
+    NotifyPosition, NotifySetup, NotifyType, PluginCtx, PluginFuture, PluginHandle, PluginHost,
+    Plugins, provide_plugins, try_use_plugins, use_plugin_ctx, use_plugins,
+};
 pub use position::{Horizontal, ParsePositionError, Position, Vertical};
+pub use root::{NebulaRoot, provide_root, use_root};
 pub use select::{Select, SelectMultiple};
 pub use styles::{CSS, UiStyles};
 pub use table::{Table, TableColumn, TablePagination, TablePaginationLabels};

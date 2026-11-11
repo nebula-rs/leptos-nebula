@@ -97,10 +97,7 @@ impl MaskControl for DomEl {
     }
 
     fn is_focused(&self) -> bool {
-        web_sys::window()
-            .and_then(|w| w.document())
-            .and_then(|d| d.active_element())
-            .is_some_and(|a| &a == self.element())
+        crate::root::active_element().is_some_and(|a| &a == self.element())
     }
 }
 

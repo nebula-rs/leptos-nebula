@@ -100,6 +100,22 @@ const dialogBody: Shortcuts = Object.fromEntries(
     [p('border-radius', dialogRadius[pos]), pos === 'top' || pos === 'bottom' ? 'max-sm:w-full' : ''].join(' ').trim(),
   ]),
 )
+// Notify: uma pilha por posição. No topo o mais novo fica em cima (coluna invertida).
+const NOTIFY_STACKS: Record<string, string> = {
+  'top-left': 'top-0 left-0 items-start flex-col-reverse',
+  top: 'top-0 inset-x-0 items-center flex-col-reverse',
+  'top-right': 'top-0 right-0 items-end flex-col-reverse',
+  left: 'top-1/2 left-0 -translate-y-1/2 items-start flex-col',
+  center: 'top-1/2 inset-x-0 -translate-y-1/2 items-center flex-col',
+  right: 'top-1/2 right-0 -translate-y-1/2 items-end flex-col',
+  'bottom-left': 'bottom-0 left-0 items-start flex-col',
+  bottom: 'bottom-0 inset-x-0 items-center flex-col',
+  'bottom-right': 'bottom-0 right-0 items-end flex-col',
+}
+const notifyStacks: Shortcuts = Object.fromEntries(
+  Object.entries(NOTIFY_STACKS).map(([pos, utils]) => [`lx-notify-stack-${pos}`, utils]),
+)
+
 const dialogEnter: Shortcuts = Object.fromEntries(
   DIALOG_POSITIONS.map((pos) => [
     `lx-dialog-enter-${pos}`,
@@ -401,6 +417,82 @@ const btnToggle: Shortcuts = {
   ...btnToggleItems,
 }
 
+// ── OptionGroup ───────────────────────────────────────────────────────────
+// Native `<input type=radio|checkbox>`. Radio and checkbox keep the native look (`accent-color` =
+// the tone); the toggle is an `appearance:none` track whose thumb is a gradient moved by
+// `background-position`. The tone comes from `lx-tone-*` on the group. Exclusive states are
+// complete shortcuts.
+const optionFocus = [
+  'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2',
+  'focus-visible:[outline-color:var(--lx-tone)]',
+].join(' ')
+const optionControl = (size: string) =>
+  [
+    'flex-none m-0 cursor-pointer',
+    p('width', v(size)),
+    p('height', v(size)),
+    p('accent-color', 'var(--lx-tone)'),
+    optionFocus,
+  ].join(' ')
+const toggleBase = (w: string, h: string) =>
+  [
+    'flex-none m-0 box-border cursor-pointer appearance-none rounded-full bg-no-repeat',
+    p('width', v(w)),
+    p('height', v(h)),
+    p('padding', v('option-toggle-pad')),
+    p('background-origin', 'content-box'),
+    p('background-size', `calc(${v(h)} - 2 * ${v('option-toggle-pad')}) 100%`),
+    p(
+      'transition',
+      `background-color ${v('duration-fast')} ${v('easing')}, background-position ${v('duration-fast')} ${v('easing')}`,
+    ),
+    `motion-reduce:${p('transition', 'none')}`,
+    optionFocus,
+  ].join(' ')
+const thumb = p(
+  'background-image',
+  `radial-gradient(circle closest-side, ${v('option-toggle-thumb')} 96%, transparent 100%)`,
+)
+const optionGroup: Shortcuts = {
+  'lx-option-group-col': `flex flex-col ${p('gap', v('option-gap'))}`,
+  'lx-option-group-col-dense': `flex flex-col ${p('gap', v('option-gap-dense'))}`,
+  'lx-option-group-inline': `flex flex-row flex-wrap items-center ${p('gap', v('option-gap-inline'))}`,
+  'lx-option-group-inline-dense': `flex flex-row flex-wrap items-center ${p('gap', v('option-gap-dense'))}`,
+  'lx-option-item': `inline-flex items-center cursor-pointer ${p('gap', v('option-item-gap'))} ${p('color', v('option-label-color'))}`,
+  'lx-option-item-left': `inline-flex flex-row-reverse items-center justify-end cursor-pointer ${p('gap', v('option-item-gap'))} ${p('color', v('option-label-color'))}`,
+  'lx-option-item-disabled': `inline-flex items-center cursor-not-allowed ${p('gap', v('option-item-gap'))} ${p('color', v('option-label-color'))} ${p('opacity', v('option-disabled-opacity'))}`,
+  'lx-option-item-left-disabled': `inline-flex flex-row-reverse items-center justify-end cursor-not-allowed ${p('gap', v('option-item-gap'))} ${p('color', v('option-label-color'))} ${p('opacity', v('option-disabled-opacity'))}`,
+  'lx-option-label': 'select-none',
+  'lx-radio': optionControl('option-size'),
+  'lx-radio-dense': optionControl('option-size-dense'),
+  'lx-checkbox': optionControl('option-size'),
+  'lx-checkbox-dense': optionControl('option-size-dense'),
+  'lx-toggle-off': [
+    toggleBase('option-toggle-width', 'option-toggle-height'),
+    p('background-color', v('option-toggle-off-bg')),
+    thumb,
+    p('background-position', 'left center'),
+  ].join(' '),
+  'lx-toggle-on': [
+    toggleBase('option-toggle-width', 'option-toggle-height'),
+    p('background-color', 'var(--lx-tone)'),
+    thumb,
+    p('background-position', 'right center'),
+  ].join(' '),
+  'lx-toggle-off-dense': [
+    toggleBase('option-toggle-width-dense', 'option-toggle-height-dense'),
+    p('background-color', v('option-toggle-off-bg')),
+    thumb,
+    p('background-position', 'left center'),
+  ].join(' '),
+  'lx-toggle-on-dense': [
+    toggleBase('option-toggle-width-dense', 'option-toggle-height-dense'),
+    p('background-color', 'var(--lx-tone)'),
+    thumb,
+    p('background-position', 'right center'),
+  ].join(' '),
+}
+
 export const shortcuts: Shortcuts = {
   ...tones,
   ...field,
@@ -447,6 +539,7 @@ export const shortcuts: Shortcuts = {
   'lx-btn-disabled': `pointer-events-none cursor-not-allowed ${p('opacity', v('state-disabled-opacity'))}`,
 
   ...btnToggle,
+  ...optionGroup,
 
   // ── Badge ─────────────────────────────────────────────────────────────────
   'lx-badge': [
@@ -682,6 +775,92 @@ export const shortcuts: Shortcuts = {
   'lx-dialog-shake': [
     p('animation', `lx-dialog-shake ${v('dialog-shake-duration')} ease-in-out`),
     `motion-reduce:${p('animation', 'none')}`,
+  ].join(' '),
+  // Dialog plugin (`Plugins::dialog`): the content of the panel, over a flat `Card`.
+  'lx-dialog-plugin': `${p('width', v('dialog-plugin-width'))} max-w-full box-border`,
+  'lx-dialog-title': `${p('font-size', v('dialog-plugin-title-size'))} ${p('font-weight', v('dialog-plugin-title-weight'))} ${p('line-height', '1.3')}`,
+  'lx-dialog-message': `${p('white-space', 'pre-line')} ${p('overflow-wrap', 'anywhere')}`,
+  'lx-dialog-progress': `flex justify-center ${p('padding', v('dialog-plugin-gap') + ' 0')}`,
+  'lx-dialog-form': `flex flex-col ${p('gap', v('dialog-plugin-gap'))}`,
+  // ── Notify plugin (`Plugins::notify`) ─────────────────────────────────────
+  // A camada é um `popover="manual"` que cobre a janela (sem `display`: o UA esconde o popover
+  // fechado com `display:none`); as pilhas são uma por posição e só os toasts recebem o ponteiro.
+  'lx-notify-layer': [
+    'fixed inset-0 m-0 p-0 box-border w-full h-full overflow-visible pointer-events-none',
+    p('border', '0'),
+    p('background', 'transparent'),
+    p('color', 'inherit'),
+    p('max-width', 'none'),
+    p('max-height', 'none'),
+  ].join(' '),
+  'lx-notify-stack': [
+    'absolute flex box-border pointer-events-none',
+    p('gap', v('notify-gap')),
+    p('padding', v('notify-offset')),
+  ].join(' '),
+  ...notifyStacks,
+  'lx-notify-item': [
+    'relative flex items-center box-border pointer-events-auto',
+    p('font-size', v('notify-font-size')),
+    p('border-radius', v('notify-radius')),
+    p('box-shadow', v('notify-shadow')),
+    p('min-width', v('notify-min-width')),
+    p('max-width', v('notify-max-width')),
+    p('transition', `opacity ${v('notify-duration')} ${v('notify-easing')}, transform ${v('notify-duration')} ${v('notify-easing')}`),
+    `motion-reduce:${p('transition', 'none')}`,
+  ].join(' '),
+  'lx-notify-plain': `${p('background', v('notify-bg'))} ${p('color', v('notify-color'))}`,
+  'lx-notify-toned': `${p('background', v('tone'))} ${p('color', v('tone-contrast'))}`,
+  'lx-notify-single': `${p('padding', v('notify-padding'))} ${p('min-height', v('notify-min-height'))}`,
+  'lx-notify-multi': `flex-wrap ${p('padding', v('notify-padding-multi'))} ${p('min-height', v('notify-min-height-multi'))}`,
+  // Estados exclusivos (entrada/saída × aberto); a entrada vem de cima nas posições do topo.
+  'lx-notify-enter-up': `${p('opacity', '0')} ${p('transform', 'translateY(calc(-1 * var(--lx-notify-slide)))')} motion-reduce:${p('transform', 'none')}`,
+  'lx-notify-enter-down': `${p('opacity', '0')} ${p('transform', 'translateY(var(--lx-notify-slide))')} motion-reduce:${p('transform', 'none')}`,
+  'lx-notify-open': `${p('opacity', '1')} ${p('transform', 'none')}`,
+  'lx-notify-icon': `shrink-0 inline-flex ${p('font-size', v('notify-icon-size'))} ${p('margin-right', v('notify-gap'))}`,
+  'lx-notify-avatar': `shrink-0 object-cover ${p('width', v('notify-avatar-size'))} ${p('height', v('notify-avatar-size'))} ${p('border-radius', '50%')} ${p('margin-right', v('notify-gap'))}`,
+  // `flex: 1 1 auto` (não `1 1 0%`): no multi-line, a base 0 deixaria as ações caberem na mesma linha
+  'lx-notify-text': `min-w-0 ${p('flex', '1 1 auto')} ${p('padding', v('notify-text-padding'))}`,
+  'lx-notify-message': p('overflow-wrap', 'anywhere'),
+  'lx-notify-caption': `${p('font-size', '0.9em')} ${p('opacity', '0.7')} ${p('overflow-wrap', 'anywhere')}`,
+  'lx-notify-actions': `flex items-center shrink-0 ${p('margin-left', v('notify-gap'))} ${p('gap', v('notify-action-gap'))}`,
+  'lx-notify-actions-multi': `${p('flex-basis', '100%')} justify-end ${p('margin-left', '0')}`,
+  'lx-notify-action': [
+    'inline-flex items-center cursor-pointer',
+    p('gap', v('notify-action-gap')),
+    p('padding', v('notify-action-padding')),
+    p('border', '0'),
+    p('background', 'transparent'),
+    p('color', 'inherit'),
+    p('font', 'inherit'),
+    p('font-weight', '600'),
+    p('border-radius', v('notify-action-radius')),
+    `hover:${p('background', 'color-mix(in srgb, currentColor 14%, transparent)')}`,
+  ].join(' '),
+  'lx-notify-action-tone': p('color', v('tone')),
+  'lx-notify-badge': [
+    'absolute',
+    p('padding', '0.2rem 0.5rem'),
+    p('border-radius', v('notify-radius')),
+    p('font-size', v('font-size-xs')),
+    p('line-height', '1'),
+    p('background', v('color-negative')),
+    p('color', v('color-on-negative')),
+    p('box-shadow', v('notify-shadow')),
+    p('top', '-0.5rem'),
+  ].join(' '),
+  'lx-notify-badge-start': p('left', '-0.75rem'),
+  'lx-notify-badge-end': p('right', '-0.75rem'),
+  'lx-notify-progress': [
+    'absolute inset-x-0 pointer-events-none',
+    p('bottom', '0'),
+    p('height', '3px'),
+    p('background', 'currentColor'),
+    p('opacity', '0.3'),
+    p('border-radius', '0 0 var(--lx-notify-radius) var(--lx-notify-radius)'),
+    p('transform-origin', '0 50%'),
+    p('transform', 'scaleX(0)'),
+    p('animation', 'lx-notify-progress var(--lx-notify-progress-duration) linear forwards'),
   ].join(' '),
   // Bloqueio de rolagem do <html> (a classe é posta pelo componente, não vem de markup)
   'lx-scroll-lock': `overflow-hidden ${p('scrollbar-gutter', 'stable')}`,

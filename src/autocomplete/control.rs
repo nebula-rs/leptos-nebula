@@ -527,6 +527,9 @@ fn control_view(sh: Shared) -> impl IntoView {
             }
         />
         <span hidden=true node_ref=ctl.p.o.marker></span>
-        <Portal>{popup()}</Portal>
+        {match crate::root::portal_mount() {
+            Some(m) => view! { <Portal mount=m>{popup()}</Portal> }.into_any(),
+            None => view! { <Portal>{popup()}</Portal> }.into_any(),
+        }}
     }
 }

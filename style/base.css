@@ -61,6 +61,12 @@ h1, h2, h3, h4, h5, h6 {
   100% { transform: scale(1); }
 }
 
+/* Notify: a barra do tempo restante cresce até o fim (duração em `--lx-notify-progress-duration`) */
+@keyframes lx-notify-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 /* Layout com Footer: a gaveta fixa encurta pela altura do rodapé (lida pelo shortcut `lx-drawer-fixed-*`). */
 .lx-layout:has(> .lx-footer) {
   --lx-layout-footer-space: calc(var(--lx-footer-height) + env(safe-area-inset-bottom, 0px));

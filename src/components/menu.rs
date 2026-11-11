@@ -157,9 +157,7 @@ impl Ctl {
             let Ok(e) = e.dyn_into::<web_sys::KeyboardEvent>() else {
                 return;
             };
-            let on_anchor = e
-                .target()
-                .is_some_and(|t| t.dyn_ref::<web_sys::Element>().is_some_and(|x| x == &el));
+            let on_anchor = crate::root::origin_element(&e).is_some_and(|x| x == el);
             if on_anchor
                 && matches!(e.key().as_str(), "Enter" | " ")
                 && !activates_natively(&el.tag_name(), el.has_attribute("href"))
@@ -225,9 +223,8 @@ impl Ctl {
             return;
         };
         self.wire(&anchor);
-        let active = document()
-            .and_then(|d| d.active_element())
-            .and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok());
+        let active =
+            crate::root::active_element().and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok());
         self.trigger.set_value(active);
         let on_show = self.on_show;
         let shown = self.o.open(&self.params.get_value(), move || {
@@ -283,7 +280,7 @@ impl Ctl {
         let trigger = self.trigger.try_update_value(Option::take).flatten();
         let Some(doc) = document() else { return };
         let popup = self.o.popup();
-        let in_limbo = match doc.active_element() {
+        let in_limbo = match crate::root::active_element() {
             None => true,
             Some(a) => {
                 doc.body().is_some_and(|b| a == *b) || popup.is_some_and(|p| p.contains(Some(&a)))
@@ -346,7 +343,7 @@ impl Ctl {
 
     /// `pointerdown` na página: fora do menu e da âncora, fecha.
     fn on_outside(&self, e: &web_sys::Event) {
-        let Some(node) = e.target().and_then(|t| t.dyn_into::<web_sys::Node>().ok()) else {
+        let Some(node) = crate::root::origin_node(e) else {
             return;
         };
         let in_popup = self.o.popup().is_some_and(|p| p.contains(Some(&node)));
@@ -386,7 +383,7 @@ impl Ctl {
         if items.is_empty() {
             return;
         }
-        let active = document().and_then(|d| d.active_element());
+        let active = crate::root::active_element();
         let popup = self.o.popup();
         let current = active
             .as_ref()
@@ -404,9 +401,8 @@ impl Ctl {
 
     /// `Enter`/`Espaço` num item que não é `<button>`/`<a>`: clica nele.
     fn activate(&self, e: &ev::KeyboardEvent, key: &str) {
-        let Some(el) = e
-            .target()
-            .and_then(|t| t.dyn_into::<web_sys::HtmlElement>().ok())
+        let Some(el) =
+            crate::root::origin_element(e).and_then(|t| t.dyn_into::<web_sys::HtmlElement>().ok())
         else {
             return;
         };
@@ -431,7 +427,7 @@ impl Ctl {
         };
         let tabbables: Vec<web_sys::Node> =
             (0..list.length()).filter_map(|i| list.item(i)).collect();
-        let active = document().and_then(|d| d.active_element());
+        let active = crate::root::active_element();
         let idx = active
             .as_ref()
             .and_then(|a| tabbables.iter().position(|n| n.is_same_node(Some(a))));
@@ -628,7 +624,10 @@ pub fn Menu(
 
     view! {
         <span hidden=true node_ref=o.marker></span>
-        <Portal>{popup()}</Portal>
+        {match crate::root::portal_mount() {
+            Some(m) => view! { <Portal mount=m>{popup()}</Portal> }.into_any(),
+            None => view! { <Portal>{popup()}</Portal> }.into_any(),
+        }}
     }
 }
 

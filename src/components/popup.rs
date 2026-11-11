@@ -255,10 +255,8 @@ impl Tracker {
                 let (popup, run) = (popup.clone(), run.clone());
                 move |e: web_sys::Event| {
                     // rolar o próprio popup não move a âncora
-                    let inside = e
-                        .target()
-                        .and_then(|t| t.dyn_into::<web_sys::Node>().ok())
-                        .is_some_and(|n| popup.contains(Some(&n)));
+                    let inside =
+                        crate::root::origin_node(&e).is_some_and(|n| popup.contains(Some(&n)));
                     if !inside {
                         run();
                     }
@@ -351,13 +349,21 @@ impl Overlay {
     /// Acha a âncora: o pai do marcador, ou o primeiro elemento que casa com o seletor `target`.
     pub(crate) fn attach(&self, target: Option<&str>) -> Option<web_sys::Element> {
         let found = match target {
-            Some(sel) => document()?.query_selector(sel).ok().flatten(),
+            Some(sel) => self.query(sel),
             None => self.marker.get_untracked()?.parent_element(),
         };
         if let Some(a) = &found {
             self.anchor.set_value(Some(a.clone()));
         }
         found
+    }
+
+    /// `target` selector lookup in the marker's root (document or shadow root).
+    fn query(&self, selector: &str) -> Option<web_sys::Element> {
+        match self.marker.get_untracked() {
+            Some(m) => crate::root::query_near(&m, selector),
+            None => document()?.query_selector(selector).ok().flatten(),
+        }
     }
 
     /// Define a âncora direto (quando ela não é o pai do marcador nem tem seletor próprio).
@@ -370,7 +376,7 @@ impl Overlay {
         if let Some(a) = self.anchor().filter(|a| a.is_connected()) {
             return Some(a);
         }
-        let found = document()?.query_selector(target?).ok().flatten()?;
+        let found = self.query(target?)?;
         self.anchor.set_value(Some(found.clone()));
         Some(found)
     }

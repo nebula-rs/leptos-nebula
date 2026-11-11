@@ -114,6 +114,7 @@ pub fn provide_theme() -> ThemeStore {
         system_dark: RwSignal::new(false),
     };
     provide_context(store);
+    let root = crate::root::use_root();
 
     // Só roda no navegador: Effects não executam durante a renderização no servidor.
     Effect::new(move |prev: Option<()>| {
@@ -123,9 +124,9 @@ pub fn provide_theme() -> ThemeStore {
         let theme = store.theme.get();
         let mode = store.mode.get();
         let resolved = mode.resolve(store.system_dark.get());
-        if let Some(root) = document_element() {
-            let _ = root.set_attribute("data-theme", theme.id());
-            let _ = root.set_attribute("data-mode", resolved);
+        if let Some(target) = crate::root::theme_target(root) {
+            let _ = target.set_attribute("data-theme", theme.id());
+            let _ = target.set_attribute("data-mode", resolved);
         }
         storage_set(STORAGE_THEME, theme.id());
         storage_set(STORAGE_MODE, mode.id());
@@ -158,10 +159,6 @@ fn load(store: ThemeStore) {
     let _ = mql.add_event_listener_with_callback("change", on_change.as_ref().unchecked_ref());
     // A store vive o tempo todo do app; o listener também.
     on_change.forget();
-}
-
-fn document_element() -> Option<web_sys::Element> {
-    web_sys::window()?.document()?.document_element()
 }
 
 fn storage() -> Option<web_sys::Storage> {

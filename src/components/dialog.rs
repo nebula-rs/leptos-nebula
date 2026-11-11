@@ -206,7 +206,10 @@ impl Ctl {
 
     /// Reage ao `show`: abre, fecha (com a transição) ou cancela um fechamento em curso.
     fn sync(&self) {
-        if self.dialog.get_untracked().is_none() {
+        // `get` (not `get_untracked`): when the `Effect` runs before the `<dialog>` is in the DOM
+        // (client-side navigation to the page), it must run again once the node arrives —
+        // otherwise it has no dependency, never reruns, and the dialog never opens.
+        if self.dialog.get().is_none() {
             return;
         }
         let want = self.show.get();
@@ -226,10 +229,8 @@ impl Ctl {
             return;
         };
         self.clear_timer();
-        let trigger = web_sys::window()
-            .and_then(|w| w.document())
-            .and_then(|d| d.active_element())
-            .and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok());
+        let trigger =
+            crate::root::active_element().and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok());
         self.trigger.try_set_value(trigger);
         if !dialog.open() && dialog.show_modal().is_err() {
             // Fora do documento: não há como abrir; o sinal volta ao que o DOM mostra.
@@ -323,7 +324,7 @@ impl Ctl {
         let Some(dialog) = self.dialog.get_untracked() else {
             return;
         };
-        let on_backdrop = e.target().is_some_and(|t| {
+        let on_backdrop = crate::root::event_origin(&e).is_some_and(|t| {
             let t: &JsValue = t.as_ref();
             let d: &JsValue = dialog.as_ref();
             t == d

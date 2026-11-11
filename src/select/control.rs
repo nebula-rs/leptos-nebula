@@ -19,7 +19,7 @@ use super::nav::{
     NavKey, TypeAhead, find_prefix, initial_active_in, join_labels, move_active_in, nav_key,
     toggle, typeahead_char,
 };
-use crate::components::popup::{Listener, document, focus_quietly};
+use crate::components::popup::{Listener, focus_quietly};
 use crate::field::FieldProps;
 use crate::list_popup::{Hooks, ListPopup};
 use crate::search::{filter_indices, normalize};
@@ -460,9 +460,7 @@ struct Shared {
 
 /// O elemento é o que tem o foco do documento?
 fn has_focus(el: &web_sys::HtmlElement) -> bool {
-    document()
-        .and_then(|d| d.active_element())
-        .is_some_and(|a| a.is_same_node(Some(el)))
+    crate::root::active_element().is_some_and(|a| a.is_same_node(Some(el)))
 }
 
 fn now_ms() -> f64 {
@@ -695,9 +693,7 @@ fn in_button(e: &web_sys::Event) -> bool {
 }
 
 fn closest_of(e: &web_sys::Event, selector: &str) -> bool {
-    e.target()
-        .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
-        .is_some_and(|el| el.closest(selector).ok().flatten().is_some())
+    crate::root::origin_element(e).is_some_and(|el| el.closest(selector).ok().flatten().is_some())
 }
 
 /// O `<input readonly role="combobox">`, o marcador da âncora e o popup (`Portal`).
@@ -832,9 +828,7 @@ fn control_view(sh: Shared) -> impl IntoView {
             // (no campo, ou na caixa de busca): só a própria caixa de busca precisa dele, para
             // posicionar o cursor
             let on_mousedown = move |e: ev::MouseEvent| {
-                let in_search = e
-                    .target()
-                    .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+                let in_search = crate::root::origin_element(&e)
                     .is_some_and(|el| el.closest("input").ok().flatten().is_some());
                 if !in_search {
                     e.prevent_default();
@@ -945,6 +939,9 @@ fn control_view(sh: Shared) -> impl IntoView {
             on:blur=move |e: ev::FocusEvent| ctl.on_focus_leave(e.related_target())
         />
         <span hidden=true node_ref=ctl.p.o.marker></span>
-        <Portal>{popup()}</Portal>
+        {match crate::root::portal_mount() {
+            Some(m) => view! { <Portal mount=m>{popup()}</Portal> }.into_any(),
+            None => view! { <Portal>{popup()}</Portal> }.into_any(),
+        }}
     }
 }

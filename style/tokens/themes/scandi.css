@@ -222,6 +222,50 @@
   --lx-dialog-scale-from: 0.92;
   --lx-dialog-slide-distance: 2.5rem;
   --lx-dialog-shake-duration: 170ms;
+  /* Dialog plugin (`Plugins::dialog`) */
+  --lx-dialog-plugin-width: 25rem;
+  --lx-dialog-plugin-gap: var(--lx-space-sm);
+  --lx-dialog-plugin-title-size: var(--lx-font-size-lg);
+  --lx-dialog-plugin-title-weight: 600;
+  /* Notify plugin (`Plugins::notify`) */
+  --lx-notify-bg: var(--lx-p-ink-800);
+  --lx-notify-color: var(--lx-p-linen-50);
+  --lx-notify-radius: var(--lx-radius-md);
+  --lx-notify-shadow: var(--lx-shadow-popup);
+  --lx-notify-gap: var(--lx-space-sm);
+  --lx-notify-offset: var(--lx-space-md);
+  --lx-notify-font-size: var(--lx-font-size-sm);
+  --lx-notify-min-width: min(95vw, 15rem);
+  --lx-notify-max-width: min(95vw, 30rem);
+  --lx-notify-padding: 0 var(--lx-space-md);
+  --lx-notify-padding-multi: var(--lx-space-sm) var(--lx-space-md);
+  --lx-notify-min-height: 3rem;
+  --lx-notify-min-height-multi: 4rem;
+  --lx-notify-text-padding: var(--lx-space-sm) 0;
+  --lx-notify-icon-size: 1.5rem;
+  --lx-notify-avatar-size: 2rem;
+  --lx-notify-action-gap: var(--lx-space-xs);
+  --lx-notify-action-padding: var(--lx-space-xs) var(--lx-space-sm);
+  --lx-notify-action-radius: var(--lx-radius-sm);
+  --lx-notify-slide: 1.5rem;
+  --lx-notify-duration: var(--lx-duration-medium);
+  --lx-notify-easing: var(--lx-easing);
+  /* OptionGroup (radio, checkbox, toggle: native inputs) */
+  --lx-option-gap: var(--lx-space-xs);
+  --lx-option-gap-dense: 0;
+  --lx-option-gap-inline: var(--lx-space-md);
+  --lx-option-item-gap: var(--lx-space-sm);
+  --lx-option-size: 1.25rem;
+  --lx-option-size-dense: 1rem;
+  --lx-option-label-color: var(--lx-color-on-surface);
+  --lx-option-toggle-width: 2.25rem;
+  --lx-option-toggle-height: 1.25rem;
+  --lx-option-toggle-width-dense: 1.75rem;
+  --lx-option-toggle-height-dense: 1rem;
+  --lx-option-toggle-pad: 2px;
+  --lx-option-toggle-off-bg: var(--lx-color-border-strong);
+  --lx-option-toggle-thumb: var(--lx-color-surface);
+  --lx-option-disabled-opacity: 0.5;
   /* Menu e Tooltip (popups posicionados na camada superior pela Popover API) */
   --lx-shadow-popup: 0 8px 24px rgb(28 31 35 / 0.14);
   --lx-menu-bg: var(--lx-color-surface-raised);
@@ -345,6 +389,8 @@
   --lx-shadow-popup: 0 8px 24px rgb(0 0 0 / 0.5);
   --lx-tooltip-bg: var(--lx-p-linen-200);
   --lx-tooltip-color: var(--lx-p-ink-900);
+  --lx-notify-bg: var(--lx-p-linen-200);
+  --lx-notify-color: var(--lx-p-ink-900);
   --lx-code-bg: var(--lx-p-ink-950);
   --lx-code-text: #ebe7e1;
   --lx-code-comment: var(--lx-p-ink-400);

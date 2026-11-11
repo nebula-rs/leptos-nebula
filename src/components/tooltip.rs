@@ -81,9 +81,7 @@ impl Ctl {
         ls.push(Listener::on(t, "focusin", move |e| {
             // só o foco do teclado: clicar no alvo ou devolver o foco depois de fechar um
             // diálogo/menu não faz o tooltip aparecer
-            let keyboard = e
-                .target()
-                .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+            let keyboard = crate::root::origin_element(&e)
                 .is_some_and(|el| el.matches(":focus-visible").unwrap_or(false));
             if keyboard {
                 this.schedule(true);
@@ -341,6 +339,9 @@ pub fn Tooltip(
 
     view! {
         <span hidden=true node_ref=o.marker></span>
-        <Portal>{popup()}</Portal>
+        {match crate::root::portal_mount() {
+            Some(m) => view! { <Portal mount=m>{popup()}</Portal> }.into_any(),
+            None => view! { <Portal>{popup()}</Portal> }.into_any(),
+        }}
     }
 }

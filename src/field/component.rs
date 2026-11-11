@@ -314,9 +314,7 @@ pub fn Field(
         else {
             return;
         };
-        let on_interactive = e
-            .target()
-            .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+        let on_interactive = crate::root::origin_element(&e)
             .and_then(|t| {
                 t.closest("input, select, textarea, button, a[href], [tabindex]")
                     .ok()

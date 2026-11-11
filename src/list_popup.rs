@@ -160,7 +160,13 @@ impl ListPopup {
     /// Rola a opção `i` para a vista dentro da lista.
     pub(crate) fn scroll_to(&self, i: Option<usize>) {
         let Some(i) = i else { return };
-        let Some(el) = document().and_then(|d| d.get_element_by_id(&self.option_id(i))) else {
+        // in the popup's own root (document or shadow root)
+        let near: Option<web_sys::Node> = self
+            .o
+            .popup()
+            .map(Into::into)
+            .or_else(|| self.o.anchor().map(Into::into));
+        let Some(el) = near.and_then(|n| crate::root::by_id_near(&n, &self.option_id(i))) else {
             return;
         };
         let opts = web_sys::ScrollIntoViewOptions::new();
@@ -213,7 +219,7 @@ impl ListPopup {
 
     /// `pointerdown` fora do popup e do campo fecha (o clique dentro do campo é do controle).
     fn on_outside(&self, e: &web_sys::Event) {
-        let Some(node) = e.target().and_then(|t| t.dyn_into::<web_sys::Node>().ok()) else {
+        let Some(node) = crate::root::origin_node(e) else {
             return;
         };
         if !self.contains(&node) && self.o.phase.get_untracked() == Phase::Open {
