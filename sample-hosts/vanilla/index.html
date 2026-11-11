@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Host · Vanilla</title>
+    <!-- Font recommended by NES.css: inherited by everything below <body>, slots included. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
+  </head>
+  <body>
+    <main class="nes-container with-title">
+      <p class="title">Host · Vanilla (gerência manual)</p>
+      <p>NES.css + hostile.css. Dois slots independentes: monte dois apps (ou dois do mesmo) em paralelo.</p>
+      <section class="nes-container with-title">
+        <p class="title">Controles do host</p>
+        <button type="button" class="nes-btn is-primary">Botão do host</button>
+        <input class="nes-input" placeholder="Input do host" />
+        <div class="nes-select"><select><option>Select do host</option></select></div>
+      </section>
+      <div id="slots"></div>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

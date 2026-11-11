@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Host · Module Federation</title>
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Host · Module Federation</h1>
+        <p>PicoCSS + hostile.css. Os slots abaixo recebem micro-frontends do leptos-nebula (modo <code>wc</code>).</p>
+        <nav>
+          <button type="button">Botão do host</button>
+          <input placeholder="Input do host" />
+          <select><option>Select do host</option></select>
+        </nav>
+      </header>
+      <nav><ul id="routes"></ul></nav>
+      <article id="outlet"></article>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

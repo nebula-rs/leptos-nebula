@@ -1,0 +1,20 @@
+{
+  "name": "@leptos-nebula/host-federation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hostile host page with Module Federation, for the leptos-nebula web component mode",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@picocss/pico": "^2.1.1"
+  },
+  "devDependencies": {
+    "@module-federation/vite": "^1.23.11",
+    "vite": "^8.3.6",
+    "@leptos-nebula/dev-mounts": "workspace:*"
+  }
+}

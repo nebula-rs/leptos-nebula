@@ -1,0 +1,34 @@
+/* Hostile on purpose: everything here tries to leak into the slots (micro-frontends). */
+
+* {
+  box-sizing: content-box !important;
+  letter-spacing: 0.04em;
+}
+
+:root {
+  /* Same names as leptos-nebula tokens: custom properties cross the shadow boundary. */
+  --lx-color-primary: hotpink;
+  --lx-color-surface: lime;
+  --lx-radius-md: 0;
+  --lx-space-md: 3px;
+}
+
+body {
+  font: 19px/2.1 "Comic Neue", cursive;
+  color: orangered;
+  text-transform: uppercase;
+}
+
+button, input, select, textarea {
+  font-family: monospace !important;
+  border: 3px dashed hotpink !important;
+}
+
+dialog::backdrop { background: hotpink; }
+
+.slot {
+  min-height: 6rem;
+  outline: 2px dotted orangered;
+  padding: 0.5rem;
+}
+

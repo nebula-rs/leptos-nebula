@@ -1,0 +1,19 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+language: 'javascript'
+layer: 'application'
+
+tasks:
+  dev:
+    command: 'pnpm run dev'
+    preset: 'server'
+
+  build:
+    command: 'pnpm run build'
+    inputs: ['index.html', 'src/**/*', 'vite.config.js', 'package.json', '/apps/leptos-nebula/sample-hosts/dev-mounts/**/*']
+    outputs: ['dist']
+
+  preview:
+    command: 'pnpm run preview'
+    preset: 'server'
+    deps: ['~:build']

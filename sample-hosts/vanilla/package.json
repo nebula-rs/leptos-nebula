@@ -1,0 +1,19 @@
+{
+  "name": "@leptos-nebula/host-vanilla",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hostile host page that manages micro-frontends by hand, for the leptos-nebula web component mode",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@leptos-nebula/dev-mounts": "workspace:*",
+    "vite": "^8.3.6"
+  },
+  "dependencies": {
+    "nes.css": "^2.3.0"
+  }
+}

@@ -1,0 +1,38 @@
+/* Hostile on purpose: everything here tries to leak into the slots (micro-frontends). */
+
+* {
+  box-sizing: content-box !important;
+  letter-spacing: 0.04em;
+}
+
+:root {
+  /* Same names as leptos-nebula tokens: custom properties cross the shadow boundary. */
+  --lx-color-primary: teal;
+  --lx-color-surface: yellow;
+  --lx-radius-md: 0;
+  --lx-space-md: 3px;
+}
+
+body {
+  font: 19px/2.1 "Comic Neue", cursive;
+  color: purple;
+  text-transform: uppercase;
+}
+
+button, input, select, textarea {
+  font-family: monospace !important;
+  border: 3px dashed teal !important;
+}
+
+dialog::backdrop { background: teal; }
+
+.slot {
+  min-height: 6rem;
+  outline: 2px dotted purple;
+  padding: 0.5rem;
+}
+
+
+/* Layout of the host itself (not hostile): cards one above the other. */
+.slot-card { margin-top: 2rem; }
+.slot-url { margin-bottom: 1rem; }

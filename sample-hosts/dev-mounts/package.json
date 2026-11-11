@@ -1,0 +1,11 @@
+{
+  "name": "@leptos-nebula/dev-mounts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Dev hook for the sample hosts: mount a leptos-nebula app under development at a host path",
+  "exports": {
+    "./plugin": "./plugin.js",
+    "./client": "./client.js"
+  }
+}
